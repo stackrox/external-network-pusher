@@ -1,1 +1,5 @@
+# Setting files of JetBrains IDE
 .idea
+
+# Empty file touched by `make deps`
+/deps

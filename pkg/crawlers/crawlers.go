@@ -12,6 +12,7 @@ var allCrawlers = []commons.NetworkCrawler{
 	gcp.NewGcpNetworkCrawler(),
 }
 
+// NewCrawlers returns list of provider specific NetworkCrawler implementations
 func NewCrawlers(skippedProviders map[commons.Provider]bool) []commons.NetworkCrawler {
 	var crawlers []commons.NetworkCrawler
 	for _, crawler := range allCrawlers {
@@ -23,4 +24,3 @@ func NewCrawlers(skippedProviders map[commons.Provider]bool) []commons.NetworkCr
 	}
 	return crawlers
 }
-

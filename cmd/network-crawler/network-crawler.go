@@ -31,9 +31,9 @@ func main() {
 
 func run() error {
 	var (
-		flagBucketName   = flag.String("bucket-name", "", "GCS bucket name to upload external networks to")
-		flagDryRun       = flag.Bool("dry-run", false, "Skip uploading external networks to GCS")
-		flagSkipGoogle   = flag.Bool("skip-google", false, "Skip crawling Google Cloud network ranges")
+		flagBucketName = flag.String("bucket-name", "", "GCS bucket name to upload external networks to")
+		flagDryRun     = flag.Bool("dry-run", false, "Skip uploading external networks to GCS")
+		flagSkipGoogle = flag.Bool("skip-google", false, "Skip crawling Google Cloud network ranges")
 	)
 	flag.Parse()
 
@@ -142,7 +142,7 @@ func publishExternalNetworks(
 
 	log.Printf(
 		"Successfully crawled all providers. If this is not a " +
-		"dry run, please check bucket for network infos.")
+			"dry run, please check bucket for network infos.")
 	return nil
 }
 
@@ -154,13 +154,13 @@ func writeHeaderFile(bucketName string, header *commons.Header) error {
 	}
 
 	// First check and delete any existing header file
-	err = utils.DeleteObjectWithPrefix(bucketName, commons.HEADER_FILE)
+	err = utils.DeleteObjectWithPrefix(bucketName, commons.HeaderFileName)
 	if err != nil {
 		log.Printf("Failed to delete existing header file objects: %+v", err)
 		return err
 	}
 
-	headerFileName := commons.HEADER_FILE + "-" + cksum
+	headerFileName := commons.HeaderFileName + "-" + cksum
 	err = utils.WriteToBucket(bucketName, "", headerFileName, data)
 	if err != nil {
 		log.Printf("Failed to write out header file with name %s: %+v", headerFileName, err)
@@ -200,7 +200,7 @@ func getFolderName() string {
 
 func getHeaderStruct(objectPrefix string, objectNameToChecksum map[string]string) *commons.Header {
 	return &commons.Header{
-		ObjectPrefix: objectPrefix,
+		ObjectPrefix:         objectPrefix,
 		ObjectNameToCheckSum: objectNameToChecksum,
 	}
 }

@@ -11,9 +11,16 @@ import (
 )
 
 const (
+	// GCloudClientTimeout is the timeout value we use for
+	// clients connected to Google Cloud
 	GCloudClientTimeout = 3 * time.Minute
 )
 
+// WriteToBucket writes the specified content to the specified bucket.
+//  - bucketName: Name of the bucket this fn writes to
+//  - objectPrefix: Prefix of the file. EX: folder1
+//  - objectName: Name for the file that this fn creates for writing out data.
+//  - data: Content of the file.
 func WriteToBucket(
 	bucketName string,
 	objectPrefix string,
@@ -39,7 +46,9 @@ func WriteToBucket(
 	return nil
 }
 
-func DeleteObjectWithPrefix(bucketName string, prefix string) error {
+// DeleteObjectWithPrefix deletes any object in the specified bucket that
+// starts with the specified prefix.
+func DeleteObjectWithPrefix(bucketName, prefix string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), GCloudClientTimeout)
 	defer cancel()
 	client, err := storage.NewClient(ctx)
@@ -58,7 +67,8 @@ func DeleteObjectWithPrefix(bucketName string, prefix string) error {
 			break
 		}
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("%+v", err)
+			return err
 		}
 		names = append(names, attrs.Name)
 	}
@@ -77,4 +87,3 @@ func DeleteObjectWithPrefix(bucketName string, prefix string) error {
 
 	return nil
 }
-

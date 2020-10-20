@@ -7,21 +7,21 @@ import (
 	"time"
 )
 
-const HttpGetTimeout = 60 * time.Second
+const httpGetTimeout = 60 * time.Second
 
-// This function returns the body of the HTTP GET response
-func HttpGet(url string) ([]byte, error) {
+// HTTPGet returns the body of the HTTP GET response
+func HTTPGet(url string) ([]byte, error) {
 	log.Printf("Getting from URL: %s...", url)
 
 	client := &http.Client{
-		Timeout: HttpGetTimeout,
+		Timeout: httpGetTimeout,
 	}
 
 	resp, err := client.Get(url)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	bodyData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

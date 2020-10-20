@@ -1,23 +1,25 @@
 package commons
 
-// DEFAULT_REGION is used when a vendor does not
+// DefaultRegion is used when a vendor does not
 // specify regions for the IP ranges provided
-const DEFAULT_REGION = "default"
+const DefaultRegion = "default"
 
-// HEADER_FILE defines the name of the header file
+// HeaderFileName defines the name of the header file
 // uploaded to bucket. When uploading header file,
 // we also append the hash of the header file to its
 // name.
-const HEADER_FILE = "header"
+const HeaderFileName = "header"
 
+// Provider is an enum representing different external network providers
 type Provider int
 
 const (
+	// GOOGLE is provider enum for Google Cloud
 	GOOGLE Provider = iota
 )
 
-// The following list of URLs are kept here for easier
-// maintenance
-var ProviderToUrl = map[Provider]string {
+// ProviderToURL is a mapping from provider to its crawler endpoint.
+// It is kept here for easier maintenance.
+var ProviderToURL = map[Provider]string{
 	GOOGLE: "https://www.gstatic.com/ipranges/cloud.json",
 }
