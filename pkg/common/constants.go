@@ -1,4 +1,4 @@
-package commons
+package common
 
 // DefaultRegion is used when a vendor does not
 // specify regions for the IP ranges provided
@@ -14,12 +14,12 @@ const HeaderFileName = "header"
 type Provider int
 
 const (
-	// GOOGLE is provider enum for Google Cloud
-	GOOGLE Provider = iota
+	// Google is provider enum for Google Cloud
+	Google Provider = iota
 )
 
 // ProviderToURL is a mapping from provider to its crawler endpoint.
 // It is kept here for easier maintenance.
 var ProviderToURL = map[Provider]string{
-	GOOGLE: "https://www.gstatic.com/ipranges/cloud.json",
+	Google: "https://www.gstatic.com/ipranges/cloud.json",
 }

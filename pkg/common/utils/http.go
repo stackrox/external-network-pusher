@@ -1,10 +1,13 @@
 package utils
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const httpGetTimeout = 60 * time.Second
@@ -22,10 +25,13 @@ func HTTPGet(url string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("received non 200 status code. Code: %d, error: %v", resp.StatusCode, err)
+	}
 
 	bodyData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error while copying response data: %+v", err)
+		errors.Wrap(err, "failed while trying to copy response data")
 		return nil, err
 	}
 	return bodyData, nil

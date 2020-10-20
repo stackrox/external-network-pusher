@@ -5,26 +5,25 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"github.com/stackrox/external-network-pusher/pkg/commons"
-	"github.com/stackrox/external-network-pusher/pkg/commons/utils"
+	"github.com/stackrox/external-network-pusher/pkg/common"
+	"github.com/stackrox/external-network-pusher/pkg/common/utils"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers"
 )
 
-/**
- * This program crawls a set of external network providers (Google, Amazon, etc.)
- * and push crawled IP ranges to a specified Google Cloud bucket.
- *
- * It creates a header file, which structure is defined in commons/constants.go,
- * and a folder with list of files containing each provider's IP ranges.
- */
+// This program crawls a set of external network providers (Google, Amazon, etc.)
+// and push crawled IP ranges to a specified Google Cloud bucket.
+//
+// It creates a header file, which structure is defined in common/constants.go,
+// and a folder with list of files containing each provider's IP ranges.
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatalf("External network pusher failed: %+v", err)
+		log.Fatalf("External network pusher failed: %v", err)
 		os.Exit(1)
 	}
 }
@@ -38,12 +37,12 @@ func run() error {
 	flag.Parse()
 
 	if *flagDryRun {
-		log.Printf("Dry run specified. Instead of uploading the content to bucket will just print to stdout.")
+		log.Print("Dry run specified. Instead of uploading the content to bucket will just print to stdout.")
 	}
 
 	skippedProviders := getAllSkippedProviders(*flagSkipGoogle)
-	crawlerImpls := crawlers.NewCrawlers(skippedProviders)
-	var crawlingProviders []string
+	crawlerImpls := crawlers.Get(skippedProviders)
+	crawlingProviders := make([]string, 0, len(crawlerImpls))
 	for _, crawler := range crawlerImpls {
 		crawlingProviders = append(crawlingProviders, crawler.GetHumanReadableProviderName())
 	}
@@ -55,7 +54,7 @@ func run() error {
 
 func publishExternalNetworks(
 	bucketName string,
-	crawlerImpls []commons.NetworkCrawler,
+	crawlerImpls []common.NetworkCrawler,
 	isDryRun bool,
 ) error {
 	// We use the folder name as object prefix so that all the objects
@@ -68,23 +67,23 @@ func publishExternalNetworks(
 		networkRanges, err := crawler.CrawlPublicNetworkRanges()
 
 		if err != nil {
-			log.Printf("Failed to crawl networks for %s: %+v", crawler.GetHumanReadableProviderName(), err)
+			log.Printf("Failed to crawl networks for %s: %v", crawler.GetHumanReadableProviderName(), err)
 			// Keep looping for other providers
 			continue
 		}
 
 		data, cksum, err := marshalAndGetCksum(networkRanges)
 		if err != nil {
-			log.Printf("Failed to marshal data for %s: %+v", crawler.GetHumanReadableProviderName(), err)
+			log.Printf("Failed to marshal data for %s: %v", crawler.GetHumanReadableProviderName(), err)
 			// Keep looping for other providers
 			continue
 		}
 
 		if !isDryRun {
-			err = utils.WriteToBucket(bucketName, objectPrefix, crawler.GetObjectName(), data)
+			err := utils.WriteToBucket(bucketName, objectPrefix, crawler.GetObjectName(), data)
 			if err != nil {
 				log.Printf(
-					"Failed to upload %s's network data to with prefix %s and name %s: %+v",
+					"Failed to upload %s's network data to with prefix %s and name %s: %v",
 					crawler.GetHumanReadableProviderName(),
 					objectPrefix,
 					crawler.GetObjectName(),
@@ -109,8 +108,8 @@ func publishExternalNetworks(
 	}
 
 	if len(crawledProviderObjectNameToChecksum) == 0 {
-		log.Printf("Failed to crawl all providers.")
-		return commons.FailedToCrawlAllProviders()
+		log.Print("Failed to crawl all providers.")
+		return fmt.Errorf("failed to crawl all of the providers specified. Please look at logs for further debugging")
 	}
 
 	// Create header file
@@ -124,7 +123,7 @@ func publishExternalNetworks(
 	} else {
 		// In dry run, just print out the package name and hashes
 		log.Printf(
-			"Dry run specified. Object prefix is: %s. Object name to hashes: %+v",
+			"Dry run specified. Object prefix is: %s. Object name to hashes: %v",
 			objectPrefix,
 			crawledProviderObjectNameToChecksum)
 	}
@@ -137,33 +136,36 @@ func publishExternalNetworks(
 				failedProviders = append(failedProviders, crawler.GetHumanReadableProviderName())
 			}
 		}
-		return commons.FailedToCrawlSomeProviders(failedProviders)
+		return fmt.Errorf(
+			"failed to crawl some of the providers specified: %v. Please refer to logs for further debugging",
+			failedProviders)
 	}
 
-	log.Printf(
-		"Successfully crawled all providers. If this is not a " +
-			"dry run, please check bucket for network infos.")
+	log.Print("Successfully crawled all providers.")
+	if !isDryRun {
+		log.Printf("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName)
+	}
 	return nil
 }
 
-func writeHeaderFile(bucketName string, header *commons.Header) error {
+func writeHeaderFile(bucketName string, header *common.Header) error {
 	data, cksum, err := marshalAndGetCksum(header)
 	if err != nil {
-		log.Printf("Failed to marshal header file data: %+v", err)
+		log.Printf("Failed to marshal header file data: %v", err)
 		return err
 	}
 
 	// First check and delete any existing header file
-	err = utils.DeleteObjectWithPrefix(bucketName, commons.HeaderFileName)
+	err = utils.DeleteObjectWithPrefix(bucketName, common.HeaderFileName)
 	if err != nil {
-		log.Printf("Failed to delete existing header file objects: %+v", err)
+		log.Printf("Failed to delete existing header file objects: %v", err)
 		return err
 	}
 
-	headerFileName := commons.HeaderFileName + "-" + cksum
+	headerFileName := common.HeaderFileName + "-" + cksum
 	err = utils.WriteToBucket(bucketName, "", headerFileName, data)
 	if err != nil {
-		log.Printf("Failed to write out header file with name %s: %+v", headerFileName, err)
+		log.Printf("Failed to write out header file with name %s: %v", headerFileName, err)
 		return err
 	}
 
@@ -184,10 +186,10 @@ func marshalAndGetCksum(v interface{}) ([]byte, string, error) {
 
 func getAllSkippedProviders(
 	flagSkipGoogle bool,
-) map[commons.Provider]bool {
-	skippedProviders := make(map[commons.Provider]bool)
+) map[common.Provider]struct{} {
+	skippedProviders := make(map[common.Provider]struct{})
 	if flagSkipGoogle {
-		skippedProviders[commons.GOOGLE] = true
+		skippedProviders[common.Google] = struct{}{}
 	}
 
 	return skippedProviders
@@ -195,11 +197,11 @@ func getAllSkippedProviders(
 
 func getFolderName() string {
 	// Some Go magic here. DO NOT CHANGE THIS STRING
-	return time.Now().UTC().Format("2006-01-02 15:04:05")
+	return time.Now().UTC().Format("2006-01-02 15-04-05")
 }
 
-func getHeaderStruct(objectPrefix string, objectNameToChecksum map[string]string) *commons.Header {
-	return &commons.Header{
+func getHeaderStruct(objectPrefix string, objectNameToChecksum map[string]string) *common.Header {
+	return &common.Header{
 		ObjectPrefix:         objectPrefix,
 		ObjectNameToCheckSum: objectNameToChecksum,
 	}

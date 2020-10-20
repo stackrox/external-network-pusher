@@ -38,11 +38,6 @@ $(STATICCHECK_BIN): deps
 	@echo "+ $@"
 	@go install honnef.co/go/tools/cmd/staticcheck
 
-PACKR_BIN := $(GOBIN)/packr
-$(PACKR_BIN): deps
-	@echo "+ $@"
-	@go install github.com/gobuffalo/packr/packr
-
 ###########
 ## Lint ##
 ###########

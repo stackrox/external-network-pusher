@@ -60,14 +60,14 @@ func TestGcpParseNetwork(t *testing.T) {
 		// service1
 		service1Networks, ok := firstRegionNetworks.ServiceNameToIPRanges[service1]
 		require.True(t, ok)
-		require.ElementsMatch(t, []string{ipv41, ipv43}, service1Networks.Ipv4Prefixes)
-		require.ElementsMatch(t, []string{ipv61}, service1Networks.Ipv6Prefixes)
+		require.ElementsMatch(t, []string{ipv41, ipv43}, service1Networks.IPv4Prefixes)
+		require.ElementsMatch(t, []string{ipv61}, service1Networks.IPv6Prefixes)
 
 		// service2
 		service2Networks, ok := firstRegionNetworks.ServiceNameToIPRanges[service2]
 		require.True(t, ok)
-		require.ElementsMatch(t, []string{}, service2Networks.Ipv4Prefixes)
-		require.ElementsMatch(t, []string{ipv62}, service2Networks.Ipv6Prefixes)
+		require.ElementsMatch(t, []string{}, service2Networks.IPv4Prefixes)
+		require.ElementsMatch(t, []string{ipv62}, service2Networks.IPv6Prefixes)
 	}
 
 	{
@@ -79,7 +79,7 @@ func TestGcpParseNetwork(t *testing.T) {
 		// service1
 		service1Networks, ok := secondRegionNetworks.ServiceNameToIPRanges[service1]
 		require.True(t, ok)
-		require.ElementsMatch(t, []string{ipv42}, service1Networks.Ipv4Prefixes)
-		require.ElementsMatch(t, []string{}, service1Networks.Ipv6Prefixes)
+		require.ElementsMatch(t, []string{ipv42}, service1Networks.IPv4Prefixes)
+		require.ElementsMatch(t, []string{}, service1Networks.IPv6Prefixes)
 	}
 }

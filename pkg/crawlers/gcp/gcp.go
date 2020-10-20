@@ -2,10 +2,10 @@ package gcp
 
 import (
 	"encoding/json"
-	"log"
 
-	"github.com/stackrox/external-network-pusher/pkg/commons"
-	"github.com/stackrox/external-network-pusher/pkg/commons/utils"
+	"github.com/pkg/errors"
+	"github.com/stackrox/external-network-pusher/pkg/common"
+	"github.com/stackrox/external-network-pusher/pkg/common/utils"
 )
 
 type gcpIPSpec struct {
@@ -25,86 +25,90 @@ type gcpNetworkCrawler struct {
 	url string
 }
 
-// NewGcpNetworkCrawler returns an instance of the gcpNetworkCrawler
-func NewGcpNetworkCrawler() commons.NetworkCrawler {
-	return &gcpNetworkCrawler{url: commons.ProviderToURL[commons.GOOGLE]}
+// NewGCPNetworkCrawler returns an instance of the gcpNetworkCrawler
+func NewGCPNetworkCrawler() common.NetworkCrawler {
+	return &gcpNetworkCrawler{url: common.ProviderToURL[common.Google]}
 }
 
-func (crawler *gcpNetworkCrawler) GetHumanReadableProviderName() string {
+func (c *gcpNetworkCrawler) GetHumanReadableProviderName() string {
 	return "Google Cloud"
 }
 
-func (crawler *gcpNetworkCrawler) GetObjectName() string {
+func (c *gcpNetworkCrawler) GetObjectName() string {
 	return "google-cloud-networks"
 }
 
-func (crawler *gcpNetworkCrawler) GetProviderKey() commons.Provider {
-	return commons.GOOGLE
+func (c *gcpNetworkCrawler) GetProviderKey() common.Provider {
+	return common.Google
 }
 
-func (crawler *gcpNetworkCrawler) CrawlPublicNetworkRanges() (*commons.PublicNetworkRanges, error) {
-	networkData, err := crawler.fetch()
+func (c *gcpNetworkCrawler) CrawlPublicNetworkRanges() (*common.PublicNetworkRanges, error) {
+	networkData, err := c.fetch()
 	if err != nil {
-		log.Printf("Failed to fetch Google network data: %+v", err)
+		errors.Wrap(err, "failed to fetch network data while crawling Google's network ranges")
 		return nil, err
 	}
 
-	parsed, err := crawler.parseNetworks(networkData)
+	parsed, err := c.parseNetworks(networkData)
 	if err != nil {
-		log.Printf("Failed to parse Google network data: %+v", err)
+		errors.Wrap(err, "failed to parse Google's network data")
 		return nil, err
 	}
 
 	return parsed, nil
 }
 
-func (crawler *gcpNetworkCrawler) fetch() ([]byte, error) {
-	body, err := utils.HTTPGet(crawler.url)
+func (c *gcpNetworkCrawler) fetch() ([]byte, error) {
+	body, err := utils.HTTPGet(c.url)
 	if err != nil {
-		log.Printf("Received error while trying to fetch network from Google: %+v", err)
+		errors.Wrap(err, "failed to fetch networks from Google")
 		return nil, err
 	}
 	return body, nil
 }
 
-func (crawler *gcpNetworkCrawler) parseNetworks(data []byte) (*commons.PublicNetworkRanges, error) {
+func (c *gcpNetworkCrawler) parseNetworks(data []byte) (*common.PublicNetworkRanges, error) {
 	var gcpNetworkSpec gcpNetworkSpec
 	err := json.Unmarshal(data, &gcpNetworkSpec)
 	if err != nil {
-		log.Printf("Failed to parse GCP network data with error: %+v", err)
+		errors.Wrap(err, "failed to unmarshal Google's network data")
 		return nil, err
 	}
 
-	regionToNetworkDetails := make(map[string]commons.RegionNetworkDetail)
+	regionToNetworkDetails := make(map[string]common.RegionNetworkDetail)
 	for _, gcpIPSpec := range gcpNetworkSpec.Prefixes {
 		if gcpIPSpec.Ipv4Prefix == "" && gcpIPSpec.Ipv6Prefix == "" {
 			continue
 		}
 
 		// Get region network spec
-		var regionNetworks commons.RegionNetworkDetail
+		var regionNetworks common.RegionNetworkDetail
 		if networks, ok := regionToNetworkDetails[gcpIPSpec.Scope]; ok {
 			regionNetworks = networks
 		} else {
-			regionNetworks.ServiceNameToIPRanges = make(map[string]commons.ServiceIPRanges)
+			// Never seen this region before. Create this region.
+			regionNetworks =
+				common.RegionNetworkDetail{
+					ServiceNameToIPRanges: make(map[string]common.ServiceIPRanges),
+				}
 		}
 
 		// Get service
-		var serviceIPRanges commons.ServiceIPRanges
+		var serviceIPRanges common.ServiceIPRanges
 		if ips, ok := regionNetworks.ServiceNameToIPRanges[gcpIPSpec.Service]; ok {
 			serviceIPRanges = ips
 		}
 
 		if gcpIPSpec.Ipv4Prefix != "" {
-			serviceIPRanges.Ipv4Prefixes = append(serviceIPRanges.Ipv4Prefixes, gcpIPSpec.Ipv4Prefix)
+			serviceIPRanges.IPv4Prefixes = append(serviceIPRanges.IPv4Prefixes, gcpIPSpec.Ipv4Prefix)
 		}
 		if gcpIPSpec.Ipv6Prefix != "" {
-			serviceIPRanges.Ipv6Prefixes = append(serviceIPRanges.Ipv6Prefixes, gcpIPSpec.Ipv6Prefix)
+			serviceIPRanges.IPv6Prefixes = append(serviceIPRanges.IPv6Prefixes, gcpIPSpec.Ipv6Prefix)
 		}
 
 		regionNetworks.ServiceNameToIPRanges[gcpIPSpec.Service] = serviceIPRanges
 		regionToNetworkDetails[gcpIPSpec.Scope] = regionNetworks
 	}
 
-	return &commons.PublicNetworkRanges{RegionToNetworkDetails: regionToNetworkDetails}, nil
+	return &common.PublicNetworkRanges{RegionToNetworkDetails: regionToNetworkDetails}, nil
 }

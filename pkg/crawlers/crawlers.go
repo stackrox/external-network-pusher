@@ -3,20 +3,20 @@ package crawlers
 import (
 	"log"
 
-	"github.com/stackrox/external-network-pusher/pkg/commons"
+	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers/gcp"
 )
 
 // allCrawlers include all the crawler implementations
-var allCrawlers = []commons.NetworkCrawler{
-	gcp.NewGcpNetworkCrawler(),
+var allCrawlers = []common.NetworkCrawler{
+	gcp.NewGCPNetworkCrawler(),
 }
 
-// NewCrawlers returns list of provider specific NetworkCrawler implementations
-func NewCrawlers(skippedProviders map[commons.Provider]bool) []commons.NetworkCrawler {
-	var crawlers []commons.NetworkCrawler
+// Get returns list of provider specific NetworkCrawler implementations
+func Get(skippedProviders map[common.Provider]struct{}) []common.NetworkCrawler {
+	var crawlers []common.NetworkCrawler
 	for _, crawler := range allCrawlers {
-		if !skippedProviders[crawler.GetProviderKey()] {
+		if _, ok := skippedProviders[crawler.GetProviderKey()]; !ok {
 			crawlers = append(crawlers, crawler)
 		} else {
 			log.Printf("Skipping crawling networks for %s...", crawler.GetHumanReadableProviderName())

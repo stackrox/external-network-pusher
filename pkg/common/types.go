@@ -1,4 +1,4 @@
-package commons
+package common
 
 // NetworkCrawler defines an interface for the implementation
 // of Provider specific network range crawlers
@@ -13,9 +13,9 @@ type NetworkCrawler interface {
 // under a service region of a specific Provider
 type ServiceIPRanges struct {
 	// Sample IPv4 prefix: 8.8.0.0/16
-	Ipv4Prefixes []string `json:"ipv4Prefixes"`
+	IPv4Prefixes []string `json:"ipv4Prefixes"`
 	// Sample IPv6 prefix: 2600:1901::/48
-	Ipv6Prefixes []string `json:"ipv6Prefixes"`
+	IPv6Prefixes []string `json:"ipv6Prefixes"`
 }
 
 // RegionNetworkDetail contains mapping from all the service names under a region to ServiceIPRanges

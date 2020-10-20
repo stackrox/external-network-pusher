@@ -2,18 +2,18 @@ package utils
 
 import (
 	"context"
-	"log"
 	"path/filepath"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/pkg/errors"
 	"google.golang.org/api/iterator"
 )
 
 const (
-	// GCloudClientTimeout is the timeout value we use for
+	// gCloudClientTimeout is the timeout value we use for
 	// clients connected to Google Cloud
-	GCloudClientTimeout = 3 * time.Minute
+	gCloudClientTimeout = 3 * time.Minute
 )
 
 // WriteToBucket writes the specified content to the specified bucket.
@@ -29,7 +29,7 @@ func WriteToBucket(
 ) error {
 	objectPath := filepath.Join(objectPrefix, objectName)
 
-	ctx, cancel := context.WithTimeout(context.Background(), GCloudClientTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), gCloudClientTimeout)
 	defer cancel()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -49,7 +49,7 @@ func WriteToBucket(
 // DeleteObjectWithPrefix deletes any object in the specified bucket that
 // starts with the specified prefix.
 func DeleteObjectWithPrefix(bucketName, prefix string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), GCloudClientTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), gCloudClientTimeout)
 	defer cancel()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -67,7 +67,7 @@ func DeleteObjectWithPrefix(bucketName, prefix string) error {
 			break
 		}
 		if err != nil {
-			log.Printf("%+v", err)
+			errors.Wrapf(err, "failed while trying to list and traverse objects in bucket %s", bucketName)
 			return err
 		}
 		names = append(names, attrs.Name)
@@ -76,8 +76,9 @@ func DeleteObjectWithPrefix(bucketName, prefix string) error {
 	for _, name := range names {
 		err = bucket.Object(name).Delete(ctx)
 		if err != nil {
-			log.Printf(
-				"Failed to delete object with name %s under bucket %s. Please clean up manually",
+			errors.Wrapf(
+				err,
+				"failed to delete object with name %s under bucket %s. Please clean up manually",
 				name,
 				bucketName)
 			// Return early
