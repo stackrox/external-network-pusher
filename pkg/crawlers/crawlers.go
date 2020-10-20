@@ -3,8 +3,8 @@ package crawlers
 import (
 	"log"
 
-	"github.com/stackrox/external-network-pusher/commons"
-	"github.com/stackrox/external-network-pusher/crawlers/gcp"
+	"github.com/stackrox/external-network-pusher/pkg/commons"
+	"github.com/stackrox/external-network-pusher/pkg/crawlers/gcp"
 )
 
 // allCrawlers include all the crawler implementations

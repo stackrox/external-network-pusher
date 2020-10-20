@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/stackrox/external-network-pusher/commons"
-	"github.com/stackrox/external-network-pusher/commons/utils"
+	"github.com/stackrox/external-network-pusher/pkg/commons"
+	"github.com/stackrox/external-network-pusher/pkg/commons/utils"
 )
 
 type GcpIpSpec struct {
