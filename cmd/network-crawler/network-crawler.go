@@ -80,15 +80,15 @@ func publishExternalNetworks(
 		}
 
 		if !isDryRun {
-			err := utils.WriteToBucket(bucketName, objectPrefix, crawler.GetObjectName(), data)
-			if err != nil {
-				log.Printf(
-					"Failed to upload %s's network data to with prefix %s and name %s: %v",
-					crawler.GetHumanReadableProviderName(),
+			err :=
+				uploadObjectWithPrefix(
+					bucketName,
 					objectPrefix,
 					crawler.GetObjectName(),
-					err,
-				)
+					crawler.GetHumanReadableProviderName(),
+					data)
+			if err != nil {
+				log.Printf("Skipping upload for %s...", crawler.GetHumanReadableProviderName())
 				// Keep looping for other providers
 				continue
 			}
@@ -146,6 +146,20 @@ func publishExternalNetworks(
 		log.Printf("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName)
 	}
 	return nil
+}
+
+func uploadObjectWithPrefix(bucketName, objectPrefix, objectName, providerName string, data []byte) error {
+	err := utils.WriteToBucket(bucketName, objectPrefix, objectName, data)
+	if err != nil {
+		log.Printf(
+			"Failed to upload %s's network data to with prefix %s and name %s: %v",
+			providerName,
+			objectPrefix,
+			objectName,
+			err,
+		)
+	}
+	return err
 }
 
 func writeHeaderFile(bucketName string, header *common.Header) error {
