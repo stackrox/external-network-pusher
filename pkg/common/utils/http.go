@@ -31,8 +31,7 @@ func HTTPGet(url string) ([]byte, error) {
 
 	bodyData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		errors.Wrap(err, "failed while trying to copy response data")
-		return nil, err
+		return nil, errors.Wrap(err, "failed while trying to copy response data")
 	}
 	return bodyData, nil
 }

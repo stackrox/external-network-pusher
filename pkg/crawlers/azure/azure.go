@@ -82,8 +82,7 @@ func (c *azureNetworkCrawler) CrawlPublicNetworkRanges() (*common.PublicNetworkR
 	// Parse the data into out format
 	azureNetworks, err := c.parseAzureNetworks(cloudInfos)
 	if err != nil {
-		errors.Wrap(err, "failed to parse Azure networks")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to parse Azure networks")
 	}
 	return azureNetworks, nil
 }

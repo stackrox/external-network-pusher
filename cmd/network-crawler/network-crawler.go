@@ -19,9 +19,11 @@ import (
 // This program crawls a set of external network providers (Google, Amazon, etc.)
 // and push crawled IP ranges to a specified Google Cloud bucket.
 //
-// It creates a header file, which structure is defined in common/constants.go,
-// and a folder with list of files containing each provider's IP ranges.
+// For every run it creates a header file as per the structure defined
+// in common/constants.go, and a folder with list of files containing
+// each provider's IP ranges.
 
+// skippedProviderFlag is a flag that takes in a list or Provider names
 type skippedProviderFlag []common.Provider
 
 func (f *skippedProviderFlag) String() string {
