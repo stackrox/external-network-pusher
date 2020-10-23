@@ -1,0 +1,37 @@
+version: 2.1
+
+defaults: &defaults
+  docker:
+    - image: docker.io/stackrox/apollo-ci:0.2.3
+      auth:
+        username: $DOCKER_IO_PULL_USERNAME
+        password: $DOCKER_IO_PULL_PASSWORD
+  working_directory: /home/circleci/go/src/github.com/stackrox/external-network-pusher
+
+jobs:
+  lint:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - run:
+          name: Run lint checks
+          command: |
+            make lint
+
+  test:
+    <<: *defaults
+    steps:
+    - checkout
+    - run:
+        name: Run unit tests
+        command: |
+          make test
+
+workflows:
+  build:
+    jobs:
+      - lint:
+          context: docker-io-pull
+      - test:
+          context: docker-io-pull

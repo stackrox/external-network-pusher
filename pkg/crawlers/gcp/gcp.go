@@ -27,14 +27,14 @@ type gcpNetworkCrawler struct {
 
 // NewGCPNetworkCrawler returns an instance of the gcpNetworkCrawler
 func NewGCPNetworkCrawler() common.NetworkCrawler {
-	return &gcpNetworkCrawler{url: common.ProviderToURL[common.Google]}
+	return &gcpNetworkCrawler{url: common.ProviderToURLs[common.Google][0]}
 }
 
 func (c *gcpNetworkCrawler) GetHumanReadableProviderName() string {
 	return "Google Cloud"
 }
 
-func (c *gcpNetworkCrawler) GetObjectName() string {
+func (c *gcpNetworkCrawler) GetBucketObjectName() string {
 	return "google-cloud-networks"
 }
 
