@@ -23,7 +23,7 @@ import (
 // in common/constants.go, and a folder with list of files containing
 // each provider's IP ranges.
 
-// skippedProviderFlag is a flag that takes in a list or Provider names
+// skippedProviderFlag is a flag that takes in a list of Provider names
 type skippedProviderFlag []common.Provider
 
 func (f *skippedProviderFlag) String() string {

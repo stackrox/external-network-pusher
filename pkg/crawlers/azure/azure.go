@@ -93,9 +93,7 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 		var cloud azureCloud
 		err := json.Unmarshal(data, &cloud)
 		if err != nil {
-			log.Printf("Failed to unmarshal Azure networks: %v", err)
-			// Keep parsing other cloud info
-			continue
+			return nil, errors.Wrap(err, "failed to unmarshal Azure networks")
 		}
 
 		for _, entity := range cloud.Values {
@@ -126,8 +124,7 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 					// Stop here if we have detected an invalid IP string. This
 					// means we probably are doing something very wrong (using expired
 					// links, Azure changed the format of the json file, etc.)
-					errors.Wrapf(err, "failed to parse address: %s", ip)
-					return nil, err
+					return nil, errors.Wrapf(err, "failed to parse address: %s", ip)
 				}
 				if ip.To4() != nil {
 					// IPv4 address
@@ -144,7 +141,7 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 	}
 
 	if len(regionToNetworkDetails) == 0 {
-		return nil, fmt.Errorf("failed to parse any network jsons crawled")
+		return nil, errors.New("failed to parse any network jsons crawled")
 	}
 
 	return &common.PublicNetworkRanges{RegionToNetworkDetails: regionToNetworkDetails}, nil
@@ -166,15 +163,10 @@ func (c *azureNetworkCrawler) fetchAll() ([][]byte, error) {
 	for _, url := range c.urls {
 		jsonURL, err := c.redirectToJSONURL(url)
 		if err != nil || jsonURL == "" {
-			log.Printf("Failed to crawl Azure with URL: %s, skipping... Error: %v. JSON URL: %s", url, err, jsonURL)
-			// Keep crawling other URLs
-			continue
+			return nil, errors.Wrapf(err, "failed to crawl Azure with URL: %s. Error: %v. JSON URL: %s", url, err, jsonURL)
 		}
-		log.Printf("Reiceived Azure network JSON URL: %s", jsonURL)
+		log.Printf("Received Azure network JSON URL: %s", jsonURL)
 		jsonURLs = append(jsonURLs, jsonURL)
-	}
-	if len(jsonURLs) == 0 {
-		return nil, fmt.Errorf("failed to fetch any JSON URLs")
 	}
 
 	contents := make([][]byte, 0, len(jsonURLs))
@@ -182,14 +174,9 @@ func (c *azureNetworkCrawler) fetchAll() ([][]byte, error) {
 		log.Printf("Current URL is: %s", jsonURL)
 		body, err := utils.HTTPGet(jsonURL)
 		if err != nil {
-			log.Printf("Failed to fetch networks from Azure with URL: %s. Skipping... Error: %v", jsonURL, err)
-			// Keep crawling other URLs
-			continue
+			return nil, errors.Wrapf(err, "Failed to fetch networks from Azure with URL: %s. Error: %v", jsonURL, err)
 		}
 		contents = append(contents, body)
-	}
-	if len(contents) == 0 {
-		return nil, fmt.Errorf("failed to crawl the contents of Azure JSON URLs")
 	}
 	return contents, nil
 }

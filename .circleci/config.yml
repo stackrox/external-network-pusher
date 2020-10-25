@@ -2,10 +2,7 @@ version: 2.1
 
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.2.3
-      auth:
-        username: $DOCKER_IO_PULL_USERNAME
-        password: $DOCKER_IO_PULL_PASSWORD
+    - image: cimg/go:1.15
   working_directory: /home/circleci/go/src/github.com/stackrox/external-network-pusher
 
 jobs:
