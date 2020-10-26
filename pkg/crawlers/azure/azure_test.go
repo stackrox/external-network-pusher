@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/external-network-pusher/pkg/common/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -129,37 +128,40 @@ func TestAzureParseNetwork(t *testing.T) {
 	crawler := azureNetworkCrawler{}
 	parsedResult, err := crawler.parseAzureNetworks([][]byte{cloud1Networks, cloud2Networks})
 	require.Nil(t, err)
+	require.Equal(t, parsedResult.ProviderName, crawler.GetProviderKey().String())
 
 	// There should be 3 regions in total (c1r1, c2r2, c2)
-	require.Equal(t, 3, len(parsedResult.RegionToNetworkDetails))
+	require.Equal(t, 3, len(parsedResult.RegionNetworks))
+	regionNameToDetail := utils.GetRegionNameToDetails(parsedResult)
 
 	// Region1 (c1r1)
 	{
 		region := utils.ToCompoundName(cloud1, region1)
-		regionNetworks, ok := parsedResult.RegionToNetworkDetails[region]
+		regionNetworks, ok := regionNameToDetail[region]
 		require.True(t, ok)
-		require.Equal(t, 3, len(regionNetworks.ServiceNameToIPRanges))
+		require.Equal(t, 3, len(regionNetworks.ServiceNetworks))
 
 		service := utils.ToCompoundName(platform, service1)
-		checkServiceIPsInRegion(
+		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
+		utils.CheckServiceIPsInRegion(
 			t,
-			regionNetworks.ServiceNameToIPRanges,
+			serviceToIPs,
 			service,
 			[]string{c1r1s1IPv41, c1r1s1IPv42},
 			[]string{})
 
 		service = utils.ToCompoundName(platform, service2)
-		checkServiceIPsInRegion(
+		utils.CheckServiceIPsInRegion(
 			t,
-			regionNetworks.ServiceNameToIPRanges,
+			serviceToIPs,
 			service,
 			[]string{},
 			[]string{c1r1s2IPv6})
 
 		service = utils.ToCompoundName(platform, emptyService)
-		checkServiceIPsInRegion(
+		utils.CheckServiceIPsInRegion(
 			t,
-			regionNetworks.ServiceNameToIPRanges,
+			serviceToIPs,
 			service,
 			[]string{c1r1NoServiceIPv4},
 			[]string{c1r1NoServiceIPv6})
@@ -167,14 +169,15 @@ func TestAzureParseNetwork(t *testing.T) {
 	// Region 2 (c2r2)
 	{
 		region := utils.ToCompoundName(cloud2, region2)
-		regionNetworks, ok := parsedResult.RegionToNetworkDetails[region]
+		regionNetworks, ok := regionNameToDetail[region]
 		require.True(t, ok)
-		require.Equal(t, 1, len(regionNetworks.ServiceNameToIPRanges))
+		require.Equal(t, 1, len(regionNetworks.ServiceNetworks))
 
 		service := utils.ToCompoundName(platform, service2)
-		checkServiceIPsInRegion(
+		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
+		utils.CheckServiceIPsInRegion(
 			t,
-			regionNetworks.ServiceNameToIPRanges,
+			serviceToIPs,
 			service,
 			[]string{c2r2s2IPv4},
 			[]string{})
@@ -182,27 +185,17 @@ func TestAzureParseNetwork(t *testing.T) {
 	// Region 3 (c2)
 	{
 		region := utils.ToCompoundName(cloud2, emptyRegion)
-		regionNetworks, ok := parsedResult.RegionToNetworkDetails[region]
+		regionNetworks, ok := regionNameToDetail[region]
 		require.True(t, ok)
-		require.Equal(t, 1, len(regionNetworks.ServiceNameToIPRanges))
+		require.Equal(t, 1, len(regionNetworks.ServiceNetworks))
 
 		service := utils.ToCompoundName(platform, emptyService)
-		checkServiceIPsInRegion(
+		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
+		utils.CheckServiceIPsInRegion(
 			t,
-			regionNetworks.ServiceNameToIPRanges,
+			serviceToIPs,
 			service,
 			[]string{c2NoRegionNoServiceIPv4},
 			[]string{c2NoRegionNoServiceIPv6})
 	}
-}
-
-func checkServiceIPsInRegion(
-	t *testing.T,
-	serviceNameToIPRanges map[string]common.ServiceIPRanges,
-	service string,
-	expectedIPv4s, expectedIPv6s []string) {
-	ips, ok := serviceNameToIPRanges[service]
-	require.True(t, ok)
-	require.ElementsMatch(t, ips.IPv4Prefixes, expectedIPv4s)
-	require.ElementsMatch(t, ips.IPv6Prefixes, expectedIPv6s)
 }

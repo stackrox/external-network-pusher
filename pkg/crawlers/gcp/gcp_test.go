@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/stackrox/external-network-pusher/pkg/common/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,40 +47,52 @@ func TestGcpParseNetwork(t *testing.T) {
 	crawler := gcpNetworkCrawler{}
 	parsedResult, err := crawler.parseNetworks(networks)
 	require.Nil(t, err)
+	require.Equal(t, parsedResult.ProviderName, crawler.GetProviderKey().String())
 
 	// Two regions in total
-	require.Equal(t, 2, len(parsedResult.RegionToNetworkDetails))
+	require.Equal(t, 2, len(parsedResult.RegionNetworks))
+	regionNameToDetail := utils.GetRegionNameToDetails(parsedResult)
 
 	// Check content of the first region
 	{
-		firstRegionNetworks, ok := parsedResult.RegionToNetworkDetails[region1]
+		firstRegionNetworks, ok := regionNameToDetail[region1]
 		require.True(t, ok)
 		// Two services in total for region1
-		require.Equal(t, 2, len(firstRegionNetworks.ServiceNameToIPRanges))
+		require.Equal(t, 2, len(firstRegionNetworks.ServiceNetworks))
+
+		serviceToIPs := utils.GetServiceNameToIPs(firstRegionNetworks)
 
 		// service1
-		service1Networks, ok := firstRegionNetworks.ServiceNameToIPRanges[service1]
-		require.True(t, ok)
-		require.ElementsMatch(t, []string{ipv41, ipv43}, service1Networks.IPv4Prefixes)
-		require.ElementsMatch(t, []string{ipv61}, service1Networks.IPv6Prefixes)
+		utils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			service1,
+			[]string{ipv41, ipv43},
+			[]string{ipv61})
 
 		// service2
-		service2Networks, ok := firstRegionNetworks.ServiceNameToIPRanges[service2]
-		require.True(t, ok)
-		require.ElementsMatch(t, []string{}, service2Networks.IPv4Prefixes)
-		require.ElementsMatch(t, []string{ipv62}, service2Networks.IPv6Prefixes)
+		utils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			service2,
+			[]string{},
+			[]string{ipv62})
 	}
 
 	{
-		secondRegionNetworks, ok := parsedResult.RegionToNetworkDetails[region2]
+		secondRegionNetworks, ok := regionNameToDetail[region2]
 		require.True(t, ok)
 		// Only one service in region2
-		require.Equal(t, 1, len(secondRegionNetworks.ServiceNameToIPRanges))
+		require.Equal(t, 1, len(secondRegionNetworks.ServiceNetworks))
+
+		serviceToIPs := utils.GetServiceNameToIPs(secondRegionNetworks)
 
 		// service1
-		service1Networks, ok := secondRegionNetworks.ServiceNameToIPRanges[service1]
-		require.True(t, ok)
-		require.ElementsMatch(t, []string{ipv42}, service1Networks.IPv4Prefixes)
-		require.ElementsMatch(t, []string{}, service1Networks.IPv6Prefixes)
+		utils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			service1,
+			[]string{ipv42},
+			[]string{})
 	}
 }

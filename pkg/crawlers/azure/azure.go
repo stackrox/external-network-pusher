@@ -64,15 +64,11 @@ func (c *azureNetworkCrawler) GetProviderKey() common.Provider {
 	return common.Azure
 }
 
-func (c *azureNetworkCrawler) GetBucketObjectName() string {
-	return "azure-networks"
-}
-
 func (c *azureNetworkCrawler) GetHumanReadableProviderName() string {
 	return "Microsoft Azure Cloud"
 }
 
-func (c *azureNetworkCrawler) CrawlPublicNetworkRanges() (*common.PublicNetworkRanges, error) {
+func (c *azureNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkRanges, error) {
 	// First, fetch from all sources
 	cloudInfos, err := c.fetchAll()
 	if err != nil {
@@ -87,8 +83,8 @@ func (c *azureNetworkCrawler) CrawlPublicNetworkRanges() (*common.PublicNetworkR
 	return azureNetworks, nil
 }
 
-func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.PublicNetworkRanges, error) {
-	regionToNetworkDetails := make(map[string]common.RegionNetworkDetail)
+func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.ProviderNetworkRanges, error) {
+	providerNetworks := common.ProviderNetworkRanges{ProviderName: c.GetProviderKey().String()}
 	for _, data := range cloudInfos {
 		var cloud azureCloud
 		err := json.Unmarshal(data, &cloud)
@@ -100,24 +96,9 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 			if len(entity.Properties.AddressPrefixes) == 0 {
 				continue
 			}
-
 			regionName := c.toRegionName(cloud.Cloud, entity.Properties.Region)
 			serviceName := c.toServiceName(entity.Properties.Platform, entity.Properties.SystemService)
 
-			var regionNetworks common.RegionNetworkDetail
-			if detail, ok := regionToNetworkDetails[regionName]; ok {
-				regionNetworks = detail
-			} else {
-				regionNetworks = common.RegionNetworkDetail{
-					ServiceNameToIPRanges: make(map[string]common.ServiceIPRanges),
-				}
-			}
-
-			// Get service
-			var serviceIPRanges common.ServiceIPRanges
-			if ips, ok := regionNetworks.ServiceNameToIPRanges[serviceName]; ok {
-				serviceIPRanges = ips
-			}
 			for _, ipStr := range entity.Properties.AddressPrefixes {
 				ip, prefix, err := net.ParseCIDR(ipStr)
 				if err != nil || ip == nil || prefix == nil {
@@ -127,24 +108,15 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 					return nil, errors.Wrapf(err, "failed to parse address: %s", ip)
 				}
 				if ip.To4() != nil {
-					// IPv4 address
-					serviceIPRanges.IPv4Prefixes = append(serviceIPRanges.IPv4Prefixes, ipStr)
+					providerNetworks.AddIPv4Prefix(regionName, serviceName, ipStr)
 				} else {
-					// IPv6 address
-					serviceIPRanges.IPv6Prefixes = append(serviceIPRanges.IPv6Prefixes, ipStr)
+					providerNetworks.AddIPv6Prefix(regionName, serviceName, ipStr)
 				}
 			}
-
-			regionNetworks.ServiceNameToIPRanges[serviceName] = serviceIPRanges
-			regionToNetworkDetails[regionName] = regionNetworks
 		}
 	}
 
-	if len(regionToNetworkDetails) == 0 {
-		return nil, errors.New("failed to parse any network jsons crawled")
-	}
-
-	return &common.PublicNetworkRanges{RegionToNetworkDetails: regionToNetworkDetails}, nil
+	return &providerNetworks, nil
 }
 
 func (c *azureNetworkCrawler) toRegionName(cloudName, regionName string) string {
