@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/stackrox/external-network-pusher/pkg/common"
@@ -18,8 +19,32 @@ import (
 // This program crawls a set of external network providers (Google, Amazon, etc.)
 // and push crawled IP ranges to a specified Google Cloud bucket.
 //
-// It creates a header file, which structure is defined in common/constants.go,
-// and a folder with list of files containing each provider's IP ranges.
+// For every run it creates a header file as per the structure defined
+// in common/constants.go, and a folder with list of files containing
+// each provider's IP ranges.
+
+// skippedProviderFlag is a flag that takes in a list of Provider names
+type skippedProviderFlag []common.Provider
+
+func (f *skippedProviderFlag) String() string {
+	strs := make([]string, 0, len(*f))
+	for _, p := range *f {
+		strs = append(strs, p.String())
+	}
+	return strings.Join(strs, ",")
+}
+
+func (f *skippedProviderFlag) Set(value string) error {
+	splitted := strings.Split(value, ",")
+	for _, s := range splitted {
+		p, err := common.ToProvider(s)
+		if err != nil {
+			return err
+		}
+		*f = append(*f, p)
+	}
+	return nil
+}
 
 func main() {
 	if err := run(); err != nil {
@@ -30,23 +55,29 @@ func main() {
 
 func run() error {
 	var (
-		flagBucketName = flag.String("bucket-name", "", "GCS bucket name to upload external networks to")
-		flagDryRun     = flag.Bool("dry-run", false, "Skip uploading external networks to GCS")
-		flagSkipGoogle = flag.Bool("skip-google", false, "Skip crawling Google Cloud network ranges")
+		flagBucketName       = flag.String("bucket-name", "", "GCS bucket name to upload external networks to")
+		flagDryRun           = flag.Bool("dry-run", false, "Skip uploading external networks to GCS")
+		flagSkippedProviders skippedProviderFlag
 	)
+	skippedProvidersUsage :=
+		fmt.Sprintf("Comma separated list of providers. Currently acceptable providers are: %v", common.AllProviders())
+	flag.Var(&flagSkippedProviders, "skipped-providers", skippedProvidersUsage)
 	flag.Parse()
 
 	if *flagDryRun {
 		log.Print("Dry run specified. Instead of uploading the content to bucket will just print to stdout.")
 	}
 
-	skippedProviders := getAllSkippedProviders(*flagSkipGoogle)
-	crawlerImpls := crawlers.Get(skippedProviders)
+	crawlerImpls := crawlers.Get(flagSkippedProviders)
+	if len(crawlerImpls) == 0 {
+		log.Printf("No provider to crawl.")
+		return nil
+	}
 	crawlingProviders := make([]string, 0, len(crawlerImpls))
 	for _, crawler := range crawlerImpls {
 		crawlingProviders = append(crawlingProviders, crawler.GetHumanReadableProviderName())
 	}
-	log.Printf("Crawling from this list of providers: %v", crawlingProviders)
+	log.Printf("Crawling from this list of providers: %s", strings.Join(crawlingProviders, ", "))
 
 	err := publishExternalNetworks(*flagBucketName, crawlerImpls, *flagDryRun)
 	return err
@@ -64,6 +95,8 @@ func publishExternalNetworks(
 	// Remember successfully crawled providers for generating a header file
 	crawledProviderObjectNameToChecksum := make(map[string]string)
 	for _, crawler := range crawlerImpls {
+		log.Print("=======")
+		log.Printf("Crawing from provider %s...", crawler.GetHumanReadableProviderName())
 		networkRanges, err := crawler.CrawlPublicNetworkRanges()
 
 		if err != nil {
@@ -84,7 +117,7 @@ func publishExternalNetworks(
 				uploadObjectWithPrefix(
 					bucketName,
 					objectPrefix,
-					crawler.GetObjectName(),
+					crawler.GetBucketObjectName(),
 					crawler.GetHumanReadableProviderName(),
 					data)
 			if err != nil {
@@ -95,7 +128,7 @@ func publishExternalNetworks(
 			log.Printf(
 				"Uploaded %s's network to file: %s with prefix: %s",
 				crawler.GetHumanReadableProviderName(),
-				crawler.GetObjectName(),
+				crawler.GetBucketObjectName(),
 				objectPrefix)
 		} else {
 			// In dry run, just print out the serialized json
@@ -104,23 +137,21 @@ func publishExternalNetworks(
 		}
 
 		// Remember the checksum
-		crawledProviderObjectNameToChecksum[crawler.GetObjectName()] = cksum
-	}
-
-	if len(crawledProviderObjectNameToChecksum) == 0 {
-		log.Print("Failed to crawl all providers.")
-		return fmt.Errorf("failed to crawl all of the providers specified. Please look at logs for further debugging")
+		crawledProviderObjectNameToChecksum[crawler.GetBucketObjectName()] = cksum
 	}
 
 	// Create header file
 	header := getHeaderStruct(objectPrefix, crawledProviderObjectNameToChecksum)
-	if !isDryRun {
+	if !isDryRun && len(crawledProviderObjectNameToChecksum) != 0 {
 		err := writeHeaderFile(bucketName, header)
 		if err != nil {
 			log.Printf("Failed to create and push header file: %s", err)
 			return err
 		}
-	} else {
+		log.Print("++++++")
+		log.Printf("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName)
+		log.Print("++++++")
+	} else if isDryRun {
 		// In dry run, just print out the package name and hashes
 		log.Printf(
 			"Dry run specified. Object prefix is: %s. Object name to hashes: %v",
@@ -132,19 +163,16 @@ func publishExternalNetworks(
 	if len(crawledProviderObjectNameToChecksum) != len(crawlerImpls) {
 		var failedProviders []string
 		for _, crawler := range crawlerImpls {
-			if _, ok := crawledProviderObjectNameToChecksum[crawler.GetObjectName()]; !ok {
+			if _, ok := crawledProviderObjectNameToChecksum[crawler.GetBucketObjectName()]; !ok {
 				failedProviders = append(failedProviders, crawler.GetHumanReadableProviderName())
 			}
 		}
 		return fmt.Errorf(
-			"failed to crawl some of the providers specified: %v. Please refer to logs for further debugging",
-			failedProviders)
+			"failed to crawl some of the providers specified: %s. Please refer to logs for further debugging",
+			strings.Join(failedProviders, ", "))
 	}
 
 	log.Print("Successfully crawled all providers.")
-	if !isDryRun {
-		log.Printf("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName)
-	}
 	return nil
 }
 
@@ -196,17 +224,6 @@ func marshalAndGetCksum(v interface{}) ([]byte, string, error) {
 	hash := sha256.Sum256(data)
 	checksum := hex.EncodeToString(hash[:])
 	return data, checksum, nil
-}
-
-func getAllSkippedProviders(
-	flagSkipGoogle bool,
-) map[common.Provider]struct{} {
-	skippedProviders := make(map[common.Provider]struct{})
-	if flagSkipGoogle {
-		skippedProviders[common.Google] = struct{}{}
-	}
-
-	return skippedProviders
 }
 
 func getFolderName() string {

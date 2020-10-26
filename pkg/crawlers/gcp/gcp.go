@@ -27,14 +27,14 @@ type gcpNetworkCrawler struct {
 
 // NewGCPNetworkCrawler returns an instance of the gcpNetworkCrawler
 func NewGCPNetworkCrawler() common.NetworkCrawler {
-	return &gcpNetworkCrawler{url: common.ProviderToURL[common.Google]}
+	return &gcpNetworkCrawler{url: common.ProviderToURLs[common.Google][0]}
 }
 
 func (c *gcpNetworkCrawler) GetHumanReadableProviderName() string {
 	return "Google Cloud"
 }
 
-func (c *gcpNetworkCrawler) GetObjectName() string {
+func (c *gcpNetworkCrawler) GetBucketObjectName() string {
 	return "google-cloud-networks"
 }
 
@@ -45,14 +45,12 @@ func (c *gcpNetworkCrawler) GetProviderKey() common.Provider {
 func (c *gcpNetworkCrawler) CrawlPublicNetworkRanges() (*common.PublicNetworkRanges, error) {
 	networkData, err := c.fetch()
 	if err != nil {
-		errors.Wrap(err, "failed to fetch network data while crawling Google's network ranges")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch network data while crawling Google's network ranges")
 	}
 
 	parsed, err := c.parseNetworks(networkData)
 	if err != nil {
-		errors.Wrap(err, "failed to parse Google's network data")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to parse Google's network data")
 	}
 
 	return parsed, nil
@@ -61,8 +59,7 @@ func (c *gcpNetworkCrawler) CrawlPublicNetworkRanges() (*common.PublicNetworkRan
 func (c *gcpNetworkCrawler) fetch() ([]byte, error) {
 	body, err := utils.HTTPGet(c.url)
 	if err != nil {
-		errors.Wrap(err, "failed to fetch networks from Google")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch networks from Google")
 	}
 	return body, nil
 }
@@ -71,8 +68,7 @@ func (c *gcpNetworkCrawler) parseNetworks(data []byte) (*common.PublicNetworkRan
 	var gcpNetworkSpec gcpNetworkSpec
 	err := json.Unmarshal(data, &gcpNetworkSpec)
 	if err != nil {
-		errors.Wrap(err, "failed to unmarshal Google's network data")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to unmarshal Google's network data")
 	}
 
 	regionToNetworkDetails := make(map[string]common.RegionNetworkDetail)

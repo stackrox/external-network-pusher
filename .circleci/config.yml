@@ -1,0 +1,34 @@
+version: 2.1
+
+defaults: &defaults
+  docker:
+    - image: cimg/go:1.15
+  working_directory: /home/circleci/go/src/github.com/stackrox/external-network-pusher
+
+jobs:
+  lint:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - run:
+          name: Run lint checks
+          command: |
+            make lint
+
+  test:
+    <<: *defaults
+    steps:
+    - checkout
+    - run:
+        name: Run unit tests
+        command: |
+          make test
+
+workflows:
+  build:
+    jobs:
+      - lint:
+          context: docker-io-pull
+      - test:
+          context: docker-io-pull

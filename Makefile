@@ -59,3 +59,13 @@ staticcheck: $(STATICCHECK_BIN)
 
 .PHONY: lint
 lint: golangci-lint staticcheck
+
+
+##########
+## Test ##
+##########
+
+.PHONY: test
+test: 
+	go test ./...
+

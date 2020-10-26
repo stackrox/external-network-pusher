@@ -5,7 +5,7 @@ package common
 type NetworkCrawler interface {
 	CrawlPublicNetworkRanges() (*PublicNetworkRanges, error)
 	GetHumanReadableProviderName() string
-	GetObjectName() string
+	GetBucketObjectName() string
 	GetProviderKey() Provider
 }
 
