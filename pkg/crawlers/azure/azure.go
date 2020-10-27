@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"os/exec"
 
 	"github.com/pkg/errors"
@@ -100,17 +99,12 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 			serviceName := c.toServiceName(entity.Properties.Platform, entity.Properties.SystemService)
 
 			for _, ipStr := range entity.Properties.AddressPrefixes {
-				ip, prefix, err := net.ParseCIDR(ipStr)
-				if err != nil || ip == nil || prefix == nil {
+				err := providerNetworks.AddIPPrefix(regionName, serviceName, ipStr)
+				if err != nil {
 					// Stop here if we have detected an invalid IP string. This
 					// means we probably are doing something very wrong (using expired
 					// links, Azure changed the format of the json file, etc.)
-					return nil, errors.Wrapf(err, "failed to parse address: %s", ip)
-				}
-				if ip.To4() != nil {
-					providerNetworks.AddIPv4Prefix(regionName, serviceName, ipStr)
-				} else {
-					providerNetworks.AddIPv6Prefix(regionName, serviceName, ipStr)
+					return nil, errors.Wrapf(err, "failed to parse Azure IP address: %s", ipStr)
 				}
 			}
 		}

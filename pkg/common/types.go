@@ -1,5 +1,11 @@
 package common
 
+import (
+	"net"
+
+	"github.com/pkg/errors"
+)
+
 // NetworkCrawler defines an interface for the implementation
 // of Provider specific network range crawlers
 type NetworkCrawler interface {
@@ -35,14 +41,19 @@ type ExternalNetworkSources struct {
 	ProviderNetworks []*ProviderNetworkRanges `json:"providerNetworks"`
 }
 
-// AddIPv4Prefix adds the specified IPv4 prefix to the region and service name pair
-func (p *ProviderNetworkRanges) AddIPv4Prefix(region, service, ipv4 string) {
-	p.addIPPrefix(region, service, ipv4, true)
-}
-
-// AddIPv6Prefix adds the specified IPv6 prefix to the region and service name pair
-func (p *ProviderNetworkRanges) AddIPv6Prefix(region, service, ipv6 string) {
-	p.addIPPrefix(region, service, ipv6, false)
+// AddIPPrefix adds the specified IP prefix to the region and service name pair
+// returns error if the IP given is not a valid IP prefix
+func (p *ProviderNetworkRanges) AddIPPrefix(region, service, ipPrefix string) error {
+	ip, prefix, err := net.ParseCIDR(ipPrefix)
+	if err != nil || ip == nil || prefix == nil {
+		return errors.Wrapf(err, "failed to parse address: %s", ip)
+	}
+	if ip.To4() != nil {
+		p.addIPPrefix(region, service, ipPrefix, true)
+	} else {
+		p.addIPPrefix(region, service, ipPrefix, false)
+	}
+	return nil
 }
 
 func (p *ProviderNetworkRanges) addIPPrefix(region, service, ip string, isIPv4 bool) {

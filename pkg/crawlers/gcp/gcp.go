@@ -73,10 +73,16 @@ func (c *gcpNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 			continue
 		}
 		if gcpIPSpec.Ipv4Prefix != "" {
-			providerNetworks.AddIPv4Prefix(gcpIPSpec.Scope, gcpIPSpec.Service, gcpIPSpec.Ipv4Prefix)
+			err := providerNetworks.AddIPPrefix(gcpIPSpec.Scope, gcpIPSpec.Service, gcpIPSpec.Ipv4Prefix)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to add Google IPv4 Prefix: %s", gcpIPSpec.Ipv4Prefix)
+			}
 		}
 		if gcpIPSpec.Ipv6Prefix != "" {
-			providerNetworks.AddIPv6Prefix(gcpIPSpec.Scope, gcpIPSpec.Service, gcpIPSpec.Ipv6Prefix)
+			err := providerNetworks.AddIPPrefix(gcpIPSpec.Scope, gcpIPSpec.Service, gcpIPSpec.Ipv6Prefix)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to add Google IPv6 Prefix: %s", gcpIPSpec.Ipv6Prefix)
+			}
 		}
 	}
 
