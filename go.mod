@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.70.0 // indirect
 	cloud.google.com/go/storage v1.12.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/golangci/golangci-lint v1.31.0 // indirect
+	github.com/golangci/golangci-lint v1.32.0 // indirect
 	github.com/google/martian/v3 v3.1.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect

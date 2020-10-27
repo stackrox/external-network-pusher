@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/stackrox/external-network-pusher/pkg/common"
+	"github.com/stackrox/external-network-pusher/pkg/crawlers/aws"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers/azure"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers/gcp"
 )
@@ -12,6 +13,7 @@ import (
 var allCrawlers = []common.NetworkCrawler{
 	gcp.NewGCPNetworkCrawler(),
 	azure.NewAzureNetworkCrawler(),
+	aws.NewAWSNetworkCrawler(),
 }
 
 // Get returns list of provider specific NetworkCrawler implementations

@@ -36,6 +36,8 @@ var (
 	Google = newProvider("Google")
 	// Azure is provider "enum" for Microsoft Azure Cloud
 	Azure = newProvider("Azure")
+	// Amazon is provider "enum" for Amazon AWS
+	Amazon = newProvider("Amazon")
 )
 
 func (p Provider) String() string {
@@ -56,7 +58,9 @@ func ToProvider(s string) (Provider, error) {
 // ProviderToURLs is a mapping from provider to its crawler endpoint.
 // It is kept here for easier maintenance.
 var ProviderToURLs = map[Provider][]string{
-	Google: {"https://www.gstatic.com/ipranges/cloud.json"},
+	Google: {
+		"https://www.gstatic.com/ipranges/cloud.json",
+	},
 	// Azure URLs are found from following the links on this page:
 	// https://docs.microsoft.com/en-us/azure/virtual-network/service-tags-overview#service-tags-on-premises
 	Azure: {
@@ -68,5 +72,8 @@ var ProviderToURLs = map[Provider][]string{
 		"https://www.microsoft.com/en-us/download/confirmation.aspx?id=57062",
 		// Azure Germany
 		"https://www.microsoft.com/en-us/download/confirmation.aspx?id=57064",
+	},
+	Amazon: {
+		"https://ip-ranges.amazonaws.com/ip-ranges.json",
 	},
 }
