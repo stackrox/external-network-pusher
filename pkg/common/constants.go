@@ -8,11 +8,12 @@ import (
 // specify regions for the IP ranges provided
 const DefaultRegion = "default"
 
-// HeaderFileName defines the name of the header file
-// uploaded to bucket. When uploading header file,
-// we also append the hash of the header file to its
-// name.
-const HeaderFileName = "header"
+// NetworkFileName is the name of the network file we upload
+const NetworkFileName = "networks"
+
+// ChecksumFileName is the name which contains the checksum of the
+// network ranges file
+const ChecksumFileName = "checksum"
 
 // Provider is a string representing different external network providers
 type Provider string
