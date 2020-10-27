@@ -144,10 +144,9 @@ func uploadObjectWithPrefix(bucketName, objectPrefix, objectName string, data []
 	if err != nil {
 		return errors.Wrapf(
 			err,
-			"Failed to upload content with prefix %s and name %s: %v",
+			"failed to upload content with prefix %s and name %s",
 			objectPrefix,
-			objectName,
-			err)
+			objectName)
 	}
 	return nil
 }

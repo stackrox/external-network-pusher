@@ -50,6 +50,7 @@ func (p *ProviderNetworkRanges) addIPPrefix(region, service, ip string, isIPv4 b
 	for _, network := range p.RegionNetworks {
 		if network.RegionName == region {
 			regionNetwork = network
+			break
 		}
 	}
 	if regionNetwork == nil {
@@ -62,6 +63,7 @@ func (p *ProviderNetworkRanges) addIPPrefix(region, service, ip string, isIPv4 b
 	for _, ips := range regionNetwork.ServiceNetworks {
 		if ips.ServiceName == service {
 			serviceIPRanges = ips
+			break
 		}
 	}
 	if serviceIPRanges == nil {
