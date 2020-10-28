@@ -8,11 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	UnusedInt      = -1
-	UnusedStrSlice = []string{"unused1", "unused2"}
-)
-
 func TestAzureParseNetwork(t *testing.T) {
 	cloud1, cloud2 := "Public", "AzureGovernment"
 	service1, service2, emptyService := "ActionGroup", "AzureStorage", ""
@@ -43,78 +38,78 @@ func TestAzureParseNetwork(t *testing.T) {
 	)
 
 	testCloud1 := azureCloud{
-		ChangeNumber: UnusedInt,
+		ChangeNumber: utils.UnusedInt,
 		Cloud:        cloud1,
 		Values: []azureCloudEntity{
 			{
 				Name: service1,
 				ID:   service1,
 				Properties: azureCloudEntityProperties{
-					ChangeNumber:    UnusedInt,
+					ChangeNumber:    utils.UnusedInt,
 					Region:          region1,
-					RegionID:        UnusedInt,
+					RegionID:        utils.UnusedInt,
 					Platform:        platform,
 					SystemService:   service1,
 					AddressPrefixes: []string{c1r1s1IPv41, c1r1s1IPv42},
-					NetworkFeatures: UnusedStrSlice,
+					NetworkFeatures: utils.UnusedStrSlice,
 				},
 			},
 			{
 				Name: service2,
 				ID:   service2,
 				Properties: azureCloudEntityProperties{
-					ChangeNumber:    UnusedInt,
+					ChangeNumber:    utils.UnusedInt,
 					Region:          region1,
-					RegionID:        UnusedInt,
+					RegionID:        utils.UnusedInt,
 					Platform:        platform,
 					SystemService:   service2,
 					AddressPrefixes: []string{c1r1s2IPv6},
-					NetworkFeatures: UnusedStrSlice,
+					NetworkFeatures: utils.UnusedStrSlice,
 				},
 			},
 			{
 				Name: "AzureCloud." + region1,
 				ID:   "AzureCloud." + region1,
 				Properties: azureCloudEntityProperties{
-					ChangeNumber:    UnusedInt,
+					ChangeNumber:    utils.UnusedInt,
 					Region:          region1,
-					RegionID:        UnusedInt,
+					RegionID:        utils.UnusedInt,
 					Platform:        platform,
 					SystemService:   emptyService,
 					AddressPrefixes: []string{c1r1NoServiceIPv4, c1r1NoServiceIPv6},
-					NetworkFeatures: UnusedStrSlice,
+					NetworkFeatures: utils.UnusedStrSlice,
 				},
 			},
 		},
 	}
 	testCloud2 := azureCloud{
-		ChangeNumber: UnusedInt,
+		ChangeNumber: utils.UnusedInt,
 		Cloud:        cloud2,
 		Values: []azureCloudEntity{
 			{
 				Name: service2,
 				ID:   service2,
 				Properties: azureCloudEntityProperties{
-					ChangeNumber:    UnusedInt,
+					ChangeNumber:    utils.UnusedInt,
 					Region:          region2,
-					RegionID:        UnusedInt,
+					RegionID:        utils.UnusedInt,
 					Platform:        platform,
 					SystemService:   service2,
 					AddressPrefixes: []string{c2r2s2IPv4},
-					NetworkFeatures: UnusedStrSlice,
+					NetworkFeatures: utils.UnusedStrSlice,
 				},
 			},
 			{
 				Name: "Azure",
 				ID:   "Azure",
 				Properties: azureCloudEntityProperties{
-					ChangeNumber:    UnusedInt,
+					ChangeNumber:    utils.UnusedInt,
 					Region:          emptyRegion,
-					RegionID:        UnusedInt,
+					RegionID:        utils.UnusedInt,
 					Platform:        platform,
 					SystemService:   emptyService,
 					AddressPrefixes: []string{c2NoRegionNoServiceIPv4, c2NoRegionNoServiceIPv6},
-					NetworkFeatures: UnusedStrSlice,
+					NetworkFeatures: utils.UnusedStrSlice,
 				},
 			},
 		},
@@ -136,12 +131,12 @@ func TestAzureParseNetwork(t *testing.T) {
 
 	// Region1 (c1r1)
 	{
-		region := utils.ToCompoundName(cloud1, region1)
+		region := toRegionName(cloud1, region1)
 		regionNetworks, ok := regionNameToDetail[region]
 		require.True(t, ok)
 		require.Equal(t, 3, len(regionNetworks.ServiceNetworks))
 
-		service := utils.ToCompoundName(platform, service1)
+		service := toServiceName(platform, service1)
 		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
 		utils.CheckServiceIPsInRegion(
 			t,
@@ -150,7 +145,7 @@ func TestAzureParseNetwork(t *testing.T) {
 			[]string{c1r1s1IPv41, c1r1s1IPv42},
 			[]string{})
 
-		service = utils.ToCompoundName(platform, service2)
+		service = toServiceName(platform, service2)
 		utils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
@@ -158,7 +153,7 @@ func TestAzureParseNetwork(t *testing.T) {
 			[]string{},
 			[]string{c1r1s2IPv6})
 
-		service = utils.ToCompoundName(platform, emptyService)
+		service = toServiceName(platform, emptyService)
 		utils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
@@ -168,12 +163,12 @@ func TestAzureParseNetwork(t *testing.T) {
 	}
 	// Region 2 (c2r2)
 	{
-		region := utils.ToCompoundName(cloud2, region2)
+		region := toRegionName(cloud2, region2)
 		regionNetworks, ok := regionNameToDetail[region]
 		require.True(t, ok)
 		require.Equal(t, 1, len(regionNetworks.ServiceNetworks))
 
-		service := utils.ToCompoundName(platform, service2)
+		service := toServiceName(platform, service2)
 		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
 		utils.CheckServiceIPsInRegion(
 			t,
@@ -184,12 +179,12 @@ func TestAzureParseNetwork(t *testing.T) {
 	}
 	// Region 3 (c2)
 	{
-		region := utils.ToCompoundName(cloud2, emptyRegion)
+		region := toRegionName(cloud2, emptyRegion)
 		regionNetworks, ok := regionNameToDetail[region]
 		require.True(t, ok)
 		require.Equal(t, 1, len(regionNetworks.ServiceNetworks))
 
-		service := utils.ToCompoundName(platform, emptyService)
+		service := toServiceName(platform, emptyService)
 		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
 		utils.CheckServiceIPsInRegion(
 			t,

@@ -38,6 +38,8 @@ var (
 	Azure = newProvider("Azure")
 	// Amazon is provider "enum" for Amazon AWS
 	Amazon = newProvider("Amazon")
+	// Oracle is provider "enum" for Oracle Cloud Platform
+	Oracle = newProvider("Oracle")
 )
 
 func (p Provider) String() string {
@@ -75,5 +77,8 @@ var ProviderToURLs = map[Provider][]string{
 	},
 	Amazon: {
 		"https://ip-ranges.amazonaws.com/ip-ranges.json",
+	},
+	Oracle: {
+		"https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json",
 	},
 }

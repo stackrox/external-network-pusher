@@ -95,8 +95,8 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 			if len(entity.Properties.AddressPrefixes) == 0 {
 				continue
 			}
-			regionName := c.toRegionName(cloud.Cloud, entity.Properties.Region)
-			serviceName := c.toServiceName(entity.Properties.Platform, entity.Properties.SystemService)
+			regionName := toRegionName(cloud.Cloud, entity.Properties.Region)
+			serviceName := toServiceName(entity.Properties.Platform, entity.Properties.SystemService)
 
 			for _, ipStr := range entity.Properties.AddressPrefixes {
 				err := providerNetworks.AddIPPrefix(regionName, serviceName, ipStr)
@@ -113,12 +113,12 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 	return &providerNetworks, nil
 }
 
-func (c *azureNetworkCrawler) toRegionName(cloudName, regionName string) string {
-	return utils.ToCompoundName(cloudName, regionName)
+func toRegionName(cloudName, regionName string) string {
+	return utils.ToCompoundName([]string{cloudName, regionName})
 }
 
-func (c *azureNetworkCrawler) toServiceName(platformName, serviceName string) string {
-	return utils.ToCompoundName(platformName, serviceName)
+func toServiceName(platformName, serviceName string) string {
+	return utils.ToCompoundName([]string{platformName, serviceName})
 }
 
 func (c *azureNetworkCrawler) fetchAll() ([][]byte, error) {
