@@ -114,11 +114,11 @@ func (c *azureNetworkCrawler) parseAzureNetworks(cloudInfos [][]byte) (*common.P
 }
 
 func toRegionName(cloudName, regionName string) string {
-	return utils.ToCompoundName([]string{cloudName, regionName})
+	return utils.ToCompoundName(cloudName, regionName)
 }
 
 func toServiceName(platformName, serviceName string) string {
-	return utils.ToCompoundName([]string{platformName, serviceName})
+	return utils.ToCompoundName(platformName, serviceName)
 }
 
 func (c *azureNetworkCrawler) fetchAll() ([][]byte, error) {

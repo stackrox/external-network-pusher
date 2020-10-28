@@ -44,15 +44,12 @@ func (c *ociNetworkCrawler) GetProviderKey() common.Provider {
 func (c *ociNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkRanges, error) {
 	networkData, err := c.fetch()
 	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"failed to fetch network data while crawling %s's network ranges",
-			c.GetHumanReadableProviderName())
+		return nil, errors.Wrap(err, "failed to fetch network data while crawling Oracle's network ranges")
 	}
 
 	parsed, err := c.parseNetworks(networkData)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse %s's network data", c.GetHumanReadableProviderName())
+		return nil, errors.Wrap(err, "failed to parse Oracle's network data")
 	}
 
 	return parsed, nil
@@ -61,7 +58,7 @@ func (c *ociNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkR
 func (c *ociNetworkCrawler) fetch() ([]byte, error) {
 	body, err := utils.HTTPGet(c.url)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch networks from %s", c.GetHumanReadableProviderName())
+		return nil, errors.Wrap(err, "failed to fetch networks from Oracle")
 	}
 	return body, nil
 }
@@ -70,7 +67,7 @@ func (c *ociNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 	var ociNetworkSpec ociNetworkSpec
 	err := json.Unmarshal(data, &ociNetworkSpec)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal %s's network data", c.GetHumanReadableProviderName())
+		return nil, errors.Wrap(err, "failed to unmarshal Oracle's network data")
 	}
 
 	providerNetworks := common.ProviderNetworkRanges{ProviderName: c.GetProviderKey().String()}
@@ -82,8 +79,7 @@ func (c *ociNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 			if err != nil {
 				return nil, errors.Wrapf(
 					err,
-					"failed to add %s's IP prefix: %s",
-					c.GetHumanReadableProviderName(),
+					"failed to add Oracle's IP prefix: %s",
 					cidrDef.CIDR)
 			}
 		}
@@ -94,5 +90,5 @@ func (c *ociNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 
 func toServiceName(tags []string) string {
 	sort.Strings(tags)
-	return utils.ToCompoundName(tags)
+	return utils.ToCompoundName(tags...)
 }
