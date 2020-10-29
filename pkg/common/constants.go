@@ -88,7 +88,6 @@ var ProviderToURLs = map[Provider][]string{
 		"https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json",
 	},
 	Cloudflare: {
-		"https://www.cloudflare.com/ips-v4",
-		"https://www.cloudflare.com/ips-v6",
+		"https://api.cloudflare.com/client/v4/ips",
 	},
 }

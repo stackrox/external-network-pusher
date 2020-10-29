@@ -1,9 +1,7 @@
 package cloudflare
 
 import (
-	"bufio"
-	"bytes"
-	"io"
+	"encoding/json"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -12,12 +10,27 @@ import (
 )
 
 type cloudflareNetworkCrawler struct {
-	urls []string
+	url string
+}
+
+type cloudflareNetworkResult struct {
+	// Note: the slashes within ipv4CIDRs and ipv6CIDRs
+	// are escaped for some reason.
+	IPv4CIDRs []string `json:"ipv4_cidrs"`
+	IPv6CIDRs []string `json:"ipv6_cidrs"`
+	ETag string `json:"etag"`
+}
+
+type cloudflareNetworkSpec struct {
+	Result cloudflareNetworkResult `json:"result"`
+	Success bool `json:"success"`
+	Errors []string `json:"errors"`
+	Messages []string `json:"messages"`
 }
 
 // NewCloudflareNetworkCrawler returns an instance of the cloudflareNetworkCrawler
 func NewCloudflareNetworkCrawler() common.NetworkCrawler {
-	return &cloudflareNetworkCrawler{urls: common.ProviderToURLs[common.Cloudflare]}
+	return &cloudflareNetworkCrawler{url: common.ProviderToURLs[common.Cloudflare][0]}
 }
 
 func (c *cloudflareNetworkCrawler) GetHumanReadableProviderName() string {
@@ -29,64 +42,52 @@ func (c *cloudflareNetworkCrawler) GetProviderKey() common.Provider {
 }
 
 func (c *cloudflareNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkRanges, error) {
-	allNetworkData, err := c.fetchAll()
+	networkData, err := c.fetch()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch network data while crawling Cloudflare's network ranges")
 	}
 
-	parsed, err := c.parseNetworks(allNetworkData)
+	parsed, err := c.parseNetworks(networkData)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse Cloudflare's network data")
 	}
 	return parsed, nil
 }
 
-func (c *cloudflareNetworkCrawler) fetchAll() ([][]byte, error) {
-	allData := make([][]byte, 0, len(c.urls))
-	for _, url := range c.urls {
-		body, err := utils.HTTPGet(url)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to fetch networks from Cloudflare with URL: %s", url)
-		}
-		allData = append(allData, body)
+func (c *cloudflareNetworkCrawler) fetch() ([]byte, error) {
+	body, err := utils.HTTPGet(c.url)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch networks from Cloudflare with URL: %s", c.url)
 	}
-	return allData, nil
+	return body, nil
 }
 
-func (c *cloudflareNetworkCrawler) parseNetworks(allNetworks [][]byte) (*common.ProviderNetworkRanges, error) {
+func (c *cloudflareNetworkCrawler) parseNetworks(networks []byte) (*common.ProviderNetworkRanges, error) {
+	var cloudflareNetworkSpec cloudflareNetworkSpec
+	err := json.Unmarshal(networks, &cloudflareNetworkSpec)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal Google's network data")
+	}
+
 	providerNetworks := common.ProviderNetworkRanges{ProviderName: c.GetProviderKey().String()}
-	for _, networkData := range allNetworks {
-		networkPrefixes, err := c.readToLines(networkData)
+	for _, ipv4Str := range cloudflareNetworkSpec.Result.IPv4CIDRs {
+		ipv4Str = unescapeIPPrefix(ipv4Str)
+		err := providerNetworks.AddIPPrefix(common.DefaultRegion, common.DefaultService, ipv4Str)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse Cloudflare's network data into list of strings")
-		}
-		for _, prefix := range networkPrefixes {
-			err := providerNetworks.AddIPPrefix(common.DefaultRegion, common.DefaultService, prefix)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to add IP prefix: %s to the Cloudflare's result", prefix)
-			}
+			return nil, errors.Wrapf(err, "failed to add IPv4 prefix: %s to the Cloudflare's result", ipv4Str)
 		}
 	}
+	for _, ipv6Str := range cloudflareNetworkSpec.Result.IPv6CIDRs {
+		ipv6Str = unescapeIPPrefix(ipv6Str)
+		err := providerNetworks.AddIPPrefix(common.DefaultRegion, common.DefaultService, ipv6Str)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to add IPv6 prefix: %s to the Cloudflare's result", ipv6Str)
+		}
+	}
+
 	return &providerNetworks, nil
 }
 
-func (c *cloudflareNetworkCrawler) readToLines(data []byte) ([]string, error) {
-	lines := make([]string, 0)
-	reader := bufio.NewReader(bytes.NewReader(data))
-	for {
-		line, err := reader.ReadString('\n')
-		if err != io.EOF && err != nil {
-			return nil, errors.Wrapf(err, "failed to parse data to string slice: %s", string(data))
-		}
-		// line contains the deliminator. erase and add to the result
-		line = strings.TrimSuffix(line, "\n")
-		// And we only add if the line contains more than just the newline char
-		if line != "" {
-			lines = append(lines, line)
-		}
-		if err == io.EOF {
-			// End of input. Return
-			return lines, nil
-		}
-	}
+func unescapeIPPrefix(prefix string) string {
+	return strings.ReplaceAll(prefix, "\\/", "/")
 }

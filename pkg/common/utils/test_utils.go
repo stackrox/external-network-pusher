@@ -14,6 +14,8 @@ var (
 	UnusedStrSlice = []string{"unused1", "unused2"}
 	// UnusedString is used by testing as a placeholder for unused strings
 	UnusedString = "UNUSED"
+	// UnusedBool is used by testing as a placeholder for unused bools
+	UnusedBool = false
 )
 
 // GetServiceNameToIPs creates a map from service name to associated networks for easier lookup
