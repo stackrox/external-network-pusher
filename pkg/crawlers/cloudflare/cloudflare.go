@@ -18,14 +18,14 @@ type cloudflareNetworkResult struct {
 	// are escaped for some reason.
 	IPv4CIDRs []string `json:"ipv4_cidrs"`
 	IPv6CIDRs []string `json:"ipv6_cidrs"`
-	ETag string `json:"etag"`
+	ETag      string   `json:"etag"`
 }
 
 type cloudflareNetworkSpec struct {
-	Result cloudflareNetworkResult `json:"result"`
-	Success bool `json:"success"`
-	Errors []string `json:"errors"`
-	Messages []string `json:"messages"`
+	Result   cloudflareNetworkResult `json:"result"`
+	Success  bool                    `json:"success"`
+	Errors   []string                `json:"errors"`
+	Messages []string                `json:"messages"`
 }
 
 // NewCloudflareNetworkCrawler returns an instance of the cloudflareNetworkCrawler

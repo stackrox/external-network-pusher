@@ -16,7 +16,7 @@ func TestCloudflareParseNetwork(t *testing.T) {
 	ipv61, ipv62, ipv63 := "2400:cb00::\\/32", "2606:4700::\\/32", "2803:f800::\\/32"
 
 	testData := cloudflareNetworkSpec{
-		Result:   cloudflareNetworkResult{
+		Result: cloudflareNetworkResult{
 			IPv4CIDRs: []string{ipv41, ipv42, ipv43},
 			IPv6CIDRs: []string{ipv61, ipv62, ipv63},
 			ETag:      utils.UnusedString,
