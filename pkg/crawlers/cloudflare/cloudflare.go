@@ -66,7 +66,7 @@ func (c *cloudflareNetworkCrawler) parseNetworks(networks []byte) (*common.Provi
 	var cloudflareNetworkSpec cloudflareNetworkSpec
 	err := json.Unmarshal(networks, &cloudflareNetworkSpec)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal Google's network data")
+		return nil, errors.Wrap(err, "failed to unmarshal Cloudflare's network data")
 	}
 
 	providerNetworks := common.ProviderNetworkRanges{ProviderName: c.GetProviderKey().String()}
@@ -89,5 +89,5 @@ func (c *cloudflareNetworkCrawler) parseNetworks(networks []byte) (*common.Provi
 }
 
 func unescapeIPPrefix(prefix string) string {
-	return strings.ReplaceAll(prefix, "\\/", "/")
+	return strings.ReplaceAll(prefix, `\/`, "/")
 }

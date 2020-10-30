@@ -12,8 +12,8 @@ import (
 func TestCloudflareParseNetwork(t *testing.T) {
 	// Cloudflare provides their IPs at URL: https://api.cloudflare.com/client/v4/ips
 	// with slashes escaped. Mimic that
-	ipv41, ipv42, ipv43 := "173.245.48.0\\/20", "103.21.244.0\\/22", "103.22.200.0\\/22"
-	ipv61, ipv62, ipv63 := "2400:cb00::\\/32", "2606:4700::\\/32", "2803:f800::\\/32"
+	ipv41, ipv42, ipv43 := `173.245.48.0\/20`, `103.21.244.0\/22`, `103.22.200.0\/22`
+	ipv61, ipv62, ipv63 := `2400:cb00::\/32`, `2606:4700::\/32`, `2803:f800::\/32`
 
 	testData := cloudflareNetworkSpec{
 		Result: cloudflareNetworkResult{
