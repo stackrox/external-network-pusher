@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers/aws"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers/azure"
+	"github.com/stackrox/external-network-pusher/pkg/crawlers/cloudflare"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers/gcp"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers/oracle"
 )
@@ -16,6 +17,7 @@ var allCrawlers = []common.NetworkCrawler{
 	azure.NewAzureNetworkCrawler(),
 	aws.NewAWSNetworkCrawler(),
 	oracle.NewOCINetworkCrawler(),
+	cloudflare.NewCloudflareNetworkCrawler(),
 }
 
 // Get returns list of provider specific NetworkCrawler implementations

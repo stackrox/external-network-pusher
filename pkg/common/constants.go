@@ -6,7 +6,11 @@ import (
 
 // DefaultRegion is used when a vendor does not
 // specify regions for the IP ranges provided
-const DefaultRegion = "default"
+const DefaultRegion = "default-region"
+
+// DefaultService is used when a vendor does not
+// specify service names for the IP ranges provider
+const DefaultService = "default-service"
 
 // NetworkFileName is the name of the network file we upload
 const NetworkFileName = "networks"
@@ -40,6 +44,8 @@ var (
 	Amazon = newProvider("Amazon")
 	// Oracle is provider "enum" for Oracle Cloud Platform
 	Oracle = newProvider("Oracle")
+	// Cloudflare is provider "enum" for Cloudflare
+	Cloudflare = newProvider("Cloudflare")
 )
 
 func (p Provider) String() string {
@@ -80,5 +86,8 @@ var ProviderToURLs = map[Provider][]string{
 	},
 	Oracle: {
 		"https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json",
+	},
+	Cloudflare: {
+		"https://api.cloudflare.com/client/v4/ips",
 	},
 }
