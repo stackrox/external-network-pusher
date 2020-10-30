@@ -15,8 +15,8 @@ func TestGcpParseNetwork(t *testing.T) {
 	region1, region2 := "asia-east1", "europe-west4"
 
 	testData := gcpNetworkSpec{
-		SyncToken:    "1602608557449",
-		CreationTime: "2020-10-13T10:02:37.449",
+		SyncToken:    utils.UnusedString,
+		CreationTime: utils.UnusedString,
 		Prefixes: []gcpIPSpec{
 			{
 				Ipv4Prefix: ipv41,

@@ -7,6 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	// UnusedInt is used by testing as a placeholder for unused ints
+	UnusedInt = -1
+	// UnusedStrSlice is used by testing as a placeholder for unused string slices
+	UnusedStrSlice = []string{"unused1", "unused2"}
+	// UnusedString is used by testing as a placeholder for unused strings
+	UnusedString = "UNUSED"
+)
+
 // GetServiceNameToIPs creates a map from service name to associated networks for easier lookup
 func GetServiceNameToIPs(regionNetworkDetail *common.RegionNetworkDetail) map[string]*common.ServiceIPRanges {
 	result := make(map[string]*common.ServiceIPRanges)

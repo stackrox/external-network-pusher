@@ -8,17 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	UnusedString = "UNUSED"
-)
-
-/*
-	IPPrefix string `json:"ip_prefix"`
-	Region string `json:"region"`
-	NetworkBorderGroup string `json:"network_border_group"`
-	Service string `json:"service"`
-*/
-
 func TestAWSParseNetworks(t *testing.T) {
 	ipv41, ipv42, ipv43 := "3.5.140.0/22", "35.180.0.0/16", "52.93.178.234/32"
 	ipv61, ipv62, ipv63 := "2600:1f15::/32", "2a05:d07a:a000::/40", "240f:80ff:4000::/40"
@@ -26,25 +15,25 @@ func TestAWSParseNetworks(t *testing.T) {
 	service1, service2, service3 := "service1", "service2", "service3"
 
 	testData := awsNetworkSpec{
-		SyncToken:  UnusedString,
-		CreateDate: UnusedString,
+		SyncToken:  utils.UnusedString,
+		CreateDate: utils.UnusedString,
 		Prefixes: []awsIPv4Spec{
 			{
 				IPPrefix:           ipv41,
 				Region:             region1,
-				NetworkBorderGroup: UnusedString,
+				NetworkBorderGroup: utils.UnusedString,
 				Service:            service1,
 			},
 			{
 				IPPrefix:           ipv42,
 				Region:             region1,
-				NetworkBorderGroup: UnusedString,
+				NetworkBorderGroup: utils.UnusedString,
 				Service:            service2,
 			},
 			{
 				IPPrefix:           ipv43,
 				Region:             region2,
-				NetworkBorderGroup: UnusedString,
+				NetworkBorderGroup: utils.UnusedString,
 				Service:            service1,
 			},
 		},
@@ -52,19 +41,19 @@ func TestAWSParseNetworks(t *testing.T) {
 			{
 				IPv6Prefix:         ipv61,
 				Region:             region1,
-				NetworkBorderGroup: UnusedString,
+				NetworkBorderGroup: utils.UnusedString,
 				Service:            service1,
 			},
 			{
 				IPv6Prefix:         ipv62,
 				Region:             region2,
-				NetworkBorderGroup: UnusedString,
+				NetworkBorderGroup: utils.UnusedString,
 				Service:            service2,
 			},
 			{
 				IPv6Prefix:         ipv63,
 				Region:             region3,
-				NetworkBorderGroup: UnusedString,
+				NetworkBorderGroup: utils.UnusedString,
 				Service:            service3,
 			},
 		},
