@@ -67,6 +67,11 @@ func (c *azureNetworkCrawler) GetHumanReadableProviderName() string {
 	return "Microsoft Azure Cloud"
 }
 
+func (c *azureNetworkCrawler) GetNumRequiredIPPrefixes() int {
+	// Observed from past .json. In past we had 42440
+	return 42000
+}
+
 func (c *azureNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkRanges, error) {
 	// First, fetch from all sources
 	cloudInfos, err := c.fetchAll()

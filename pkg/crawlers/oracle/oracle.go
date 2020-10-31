@@ -41,6 +41,11 @@ func (c *ociNetworkCrawler) GetProviderKey() common.Provider {
 	return common.Oracle
 }
 
+func (c *ociNetworkCrawler) GetNumRequiredIPPrefixes() int {
+	// Observed from past .json. In past we had 258
+	return 200
+}
+
 func (c *ociNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkRanges, error) {
 	networkData, err := c.fetch()
 	if err != nil {

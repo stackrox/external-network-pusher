@@ -12,6 +12,9 @@ type NetworkCrawler interface {
 	CrawlPublicNetworkRanges() (*ProviderNetworkRanges, error)
 	GetHumanReadableProviderName() string
 	GetProviderKey() Provider
+	// GetNumRequiredIPPrefixes returns number of required IP prefixes crawled by crawler
+	// Used during validation of crawler outputs.
+	GetNumRequiredIPPrefixes() int
 }
 
 // ServiceIPRanges contains all the IP ranges used by a specific service

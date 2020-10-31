@@ -38,6 +38,11 @@ func (c *gcpNetworkCrawler) GetProviderKey() common.Provider {
 	return common.Google
 }
 
+func (c *gcpNetworkCrawler) GetNumRequiredIPPrefixes() int {
+	// Observed from past .json. In past we had 384 IP prefixes
+	return 350
+}
+
 func (c *gcpNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkRanges, error) {
 	networkData, err := c.fetch()
 	if err != nil {

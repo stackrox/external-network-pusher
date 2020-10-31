@@ -5,9 +5,13 @@ import (
 	"fmt"
 )
 
-// NoProvidersCrawledError is returned when there is no provider successfully crawled
-func NoProvidersCrawledError() error {
-	return errors.New("external network sources empty. failed to crawl any provider")
+// NumProvidersError is returned when the number of providers crawled does not match
+// with the number of crawles spawned
+func NumProvidersError(numProviders, numCrawlers int) error {
+	return fmt.Errorf(
+		"number of providers do not match with the number of crawlers. Num providers: %d, num crawlers; %d",
+		numProviders,
+		numCrawlers)
 }
 
 // ProviderNameEmptyError is returned when an empty provider name is found
@@ -42,4 +46,15 @@ func NoIPPrefixesError(providerName, regionName, serviceName string) error {
 		providerName,
 		regionName,
 		serviceName)
+}
+
+// NotEnoughIPPrefixesError is returned when a crawler did not crawl enough IP prefixes
+// for a provider
+func NotEnoughIPPrefixesError(providerName string, numObserved, numRequired int) error {
+	return fmt.Errorf(
+		"provider %s does not have enough IP prefixes crawled. "+
+			"Number of prefixes crawled: %d, number of prefixes required: %d",
+		providerName,
+		numObserved,
+		numRequired)
 }

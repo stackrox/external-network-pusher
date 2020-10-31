@@ -108,7 +108,7 @@ func publishExternalNetworks(
 		log.Printf("Successfully crawled provider %s", crawler.GetHumanReadableProviderName())
 	}
 
-	err := validateExternalNetworks(&allExternalNetworks)
+	err := validateExternalNetworks(crawlerImpls, &allExternalNetworks)
 	if err != nil {
 		return errors.Wrap(err, "external network sources validation failed")
 	}
@@ -123,13 +123,17 @@ func publishExternalNetworks(
 	return nil
 }
 
-func validateExternalNetworks(networks *common.ExternalNetworkSources) error {
+func validateExternalNetworks(crawlers []common.NetworkCrawler, networks *common.ExternalNetworkSources) error {
 	// Validate that for each provider we at least have 1 IP prefix so that we are
 	// not uploading empty data.
 	// Each crawler should be responsible for its own validation of its network
 	// ranges.
-	if len(networks.ProviderNetworks) == 0 {
-		return common.NoProvidersCrawledError()
+	if len(networks.ProviderNetworks) != len(crawlers) {
+		return common.NumProvidersError(len(networks.ProviderNetworks), len(crawlers))
+	}
+	numRequiredPrefixesPerProvider := make(map[string]int)
+	for _, c := range crawlers {
+		numRequiredPrefixesPerProvider[c.GetProviderKey().String()] = c.GetNumRequiredIPPrefixes()
 	}
 	for _, provider := range networks.ProviderNetworks {
 		providerName := provider.ProviderName
@@ -139,6 +143,7 @@ func validateExternalNetworks(networks *common.ExternalNetworkSources) error {
 		if len(provider.RegionNetworks) == 0 {
 			return common.NoRegionNetworksError(providerName)
 		}
+		numPrefixesObserved := 0
 		for _, region := range provider.RegionNetworks {
 			regionName := region.RegionName
 			if regionName == "" {
@@ -155,7 +160,14 @@ func validateExternalNetworks(networks *common.ExternalNetworkSources) error {
 				if len(service.IPv4Prefixes) == 0 && len(service.IPv6Prefixes) == 0 {
 					return common.NoIPPrefixesError(providerName, regionName, serviceName)
 				}
+				// Update the total number of prefixes observed
+				numPrefixesObserved += len(service.IPv4Prefixes)
+				numPrefixesObserved += len(service.IPv6Prefixes)
 			}
+		}
+		// Check the total number of prefixes
+		if numRequired, ok := numRequiredPrefixesPerProvider[providerName]; !ok || numPrefixesObserved < numRequired {
+			return common.NotEnoughIPPrefixesError(providerName, numPrefixesObserved, numRequired)
 		}
 	}
 	return nil
