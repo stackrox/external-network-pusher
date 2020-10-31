@@ -108,8 +108,65 @@ func publishExternalNetworks(
 		log.Printf("Successfully crawled provider %s", crawler.GetHumanReadableProviderName())
 	}
 
-	// Create the object file
-	data, cksum, err := marshalAndGetCksum(allExternalNetworks)
+	err := validateExternalNetworks(&allExternalNetworks)
+	if err != nil {
+		return errors.Wrap(err, "external network sources validation failed")
+	}
+
+	// Create and upload the object file
+	err = uploadExternalNetworkSources(&allExternalNetworks, isDryRun, bucketName, objectPrefix)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload data to bucket")
+	}
+
+	log.Print("Finished crawling all providers.")
+	return nil
+}
+
+func validateExternalNetworks(networks *common.ExternalNetworkSources) error {
+	// Validate that for each provider we at least have 1 IP prefix so that we are
+	// not uploading empty data.
+	// Each crawler should be responsible for its own validation of its network
+	// ranges.
+	if len(networks.ProviderNetworks) == 0 {
+		return common.NoProvidersCrawledError()
+	}
+	for _, provider := range networks.ProviderNetworks {
+		providerName := provider.ProviderName
+		if providerName == "" {
+			return common.ProviderNameEmptyError()
+		}
+		if len(provider.RegionNetworks) == 0 {
+			return common.NoRegionNetworksError(providerName)
+		}
+		for _, region := range provider.RegionNetworks {
+			regionName := region.RegionName
+			if regionName == "" {
+				return common.EmptyRegionNameError(providerName)
+			}
+			if len(region.ServiceNetworks) == 0 {
+				return common.NoServiceNetworksError(providerName, regionName)
+			}
+			for _, service := range region.ServiceNetworks {
+				serviceName := service.ServiceName
+				if serviceName == "" {
+					return common.EmptyServiceNameError(providerName, regionName)
+				}
+				if len(service.IPv4Prefixes) == 0 && len(service.IPv6Prefixes) == 0 {
+					return common.NoIPPrefixesError(providerName, regionName, serviceName)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func uploadExternalNetworkSources(
+	networks *common.ExternalNetworkSources,
+	isDryRun bool,
+	bucketName, objectPrefix string,
+) error {
+	data, cksum, err := marshalAndGetCksum(networks)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal external networks")
 	}
@@ -135,7 +192,6 @@ func publishExternalNetworks(
 			cksum)
 	}
 
-	log.Print("Finished crawling all providers.")
 	return nil
 }
 
