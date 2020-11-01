@@ -6,11 +6,11 @@ import (
 
 // DefaultRegion is used when a vendor does not
 // specify regions for the IP ranges provided
-const DefaultRegion = "default-region"
+const DefaultRegion = "unknown"
 
 // DefaultService is used when a vendor does not
 // specify service names for the IP ranges provider
-const DefaultService = "default-service"
+const DefaultService = "unknown"
 
 // NetworkFileName is the name of the network file we upload
 const NetworkFileName = "networks"
@@ -18,6 +18,10 @@ const NetworkFileName = "networks"
 // ChecksumFileName is the name which contains the checksum of the
 // network ranges file
 const ChecksumFileName = "checksum"
+
+// LatestPrefixFileName is the name of the file which contains the
+// folder name of the latest crawler output
+const LatestPrefixFileName = "latest_prefix"
 
 // Provider is a string representing different external network providers
 type Provider string

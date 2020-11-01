@@ -119,6 +119,12 @@ func publishExternalNetworks(
 		return errors.Wrap(err, "failed to upload data to bucket")
 	}
 
+	// Update the latest_prefix pointer
+	err = updateLatestPrefixPointer(isDryRun, bucketName, objectPrefix)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update latest pointer with prefix: %s", objectPrefix)
+	}
+
 	log.Print("Finished crawling all providers.")
 	return nil
 }
@@ -234,4 +240,29 @@ func marshalAndGetCksum(v interface{}) ([]byte, string, error) {
 func getFolderName() string {
 	// Some Go magic here. DO NOT CHANGE THIS STRING
 	return time.Now().UTC().Format("2006-01-02 15-04-05")
+}
+
+func updateLatestPrefixPointer(isDryRun bool, bucketName, objectPrefix string) error {
+	if !isDryRun {
+		// Check and delete the existing latest_prefix pointer
+		err := utils.DeleteObjectWithPrefix(bucketName, common.LatestPrefixFileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to delete the existing latest_prefix file in bucket: %s", bucketName)
+		}
+
+		// Write new latest_prefix file
+		err = utils.WriteToBucket(bucketName, "", common.LatestPrefixFileName, []byte(objectPrefix))
+		if err != nil {
+			return errors.Wrapf(err, "failed to write latest_prefix file under bucket: %s", bucketName)
+		}
+	} else {
+		// Dry run specified.
+		log.Printf(
+			"Dry run specified. Skipping the update of %s with folder name %s under bucket %s",
+			common.LatestPrefixFileName,
+			objectPrefix,
+			bucketName)
+	}
+
+	return nil
 }
