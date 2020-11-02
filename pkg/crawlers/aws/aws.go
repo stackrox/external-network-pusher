@@ -47,6 +47,11 @@ func (c *awsNetworkCrawler) GetProviderKey() common.Provider {
 	return common.Amazon
 }
 
+func (c *awsNetworkCrawler) GetNumRequiredIPPrefixes() int {
+	// Observed from past .json. In past we had 4217
+	return 4000
+}
+
 func (c *awsNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkRanges, error) {
 	networkData, err := c.fetch()
 	if err != nil {

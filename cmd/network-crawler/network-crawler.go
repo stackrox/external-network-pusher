@@ -108,8 +108,83 @@ func publishExternalNetworks(
 		log.Printf("Successfully crawled provider %s", crawler.GetHumanReadableProviderName())
 	}
 
-	// Create the object file
-	data, cksum, err := marshalAndGetCksum(allExternalNetworks)
+	err := validateExternalNetworks(crawlerImpls, &allExternalNetworks)
+	if err != nil {
+		return errors.Wrap(err, "external network sources validation failed")
+	}
+
+	// Create and upload the object file
+	err = uploadExternalNetworkSources(&allExternalNetworks, isDryRun, bucketName, objectPrefix)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload data to bucket")
+	}
+
+	// Update the latest_prefix pointer
+	err = updateLatestPrefixPointer(isDryRun, bucketName, objectPrefix)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update latest pointer with prefix: %s", objectPrefix)
+	}
+
+	log.Print("Finished crawling all providers.")
+	return nil
+}
+
+func validateExternalNetworks(crawlers []common.NetworkCrawler, networks *common.ExternalNetworkSources) error {
+	// Validate that for each provider we at least have 1 IP prefix so that we are
+	// not uploading empty data.
+	// Each crawler should be responsible for its own validation of its network
+	// ranges.
+	if len(networks.ProviderNetworks) != len(crawlers) {
+		return common.NumProvidersError(len(networks.ProviderNetworks), len(crawlers))
+	}
+	numRequiredPrefixesPerProvider := make(map[string]int)
+	for _, c := range crawlers {
+		numRequiredPrefixesPerProvider[c.GetProviderKey().String()] = c.GetNumRequiredIPPrefixes()
+	}
+	for _, provider := range networks.ProviderNetworks {
+		providerName := provider.ProviderName
+		if providerName == "" {
+			return common.ProviderNameEmptyError()
+		}
+		if len(provider.RegionNetworks) == 0 {
+			return common.NoRegionNetworksError(providerName)
+		}
+		numPrefixesObserved := 0
+		for _, region := range provider.RegionNetworks {
+			regionName := region.RegionName
+			if regionName == "" {
+				return common.EmptyRegionNameError(providerName)
+			}
+			if len(region.ServiceNetworks) == 0 {
+				return common.NoServiceNetworksError(providerName, regionName)
+			}
+			for _, service := range region.ServiceNetworks {
+				serviceName := service.ServiceName
+				if serviceName == "" {
+					return common.EmptyServiceNameError(providerName, regionName)
+				}
+				if len(service.IPv4Prefixes) == 0 && len(service.IPv6Prefixes) == 0 {
+					return common.NoIPPrefixesError(providerName, regionName, serviceName)
+				}
+				// Update the total number of prefixes observed
+				numPrefixesObserved += len(service.IPv4Prefixes)
+				numPrefixesObserved += len(service.IPv6Prefixes)
+			}
+		}
+		// Check the total number of prefixes
+		if numRequired, ok := numRequiredPrefixesPerProvider[providerName]; !ok || numPrefixesObserved < numRequired {
+			return common.NotEnoughIPPrefixesError(providerName, numPrefixesObserved, numRequired)
+		}
+	}
+	return nil
+}
+
+func uploadExternalNetworkSources(
+	networks *common.ExternalNetworkSources,
+	isDryRun bool,
+	bucketName, objectPrefix string,
+) error {
+	data, cksum, err := marshalAndGetCksum(networks)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal external networks")
 	}
@@ -135,7 +210,6 @@ func publishExternalNetworks(
 			cksum)
 	}
 
-	log.Print("Finished crawling all providers.")
 	return nil
 }
 
@@ -166,4 +240,29 @@ func marshalAndGetCksum(v interface{}) ([]byte, string, error) {
 func getFolderName() string {
 	// Some Go magic here. DO NOT CHANGE THIS STRING
 	return time.Now().UTC().Format("2006-01-02 15-04-05")
+}
+
+func updateLatestPrefixPointer(isDryRun bool, bucketName, objectPrefix string) error {
+	if !isDryRun {
+		// Check and delete the existing latest_prefix pointer
+		err := utils.DeleteObjectWithPrefix(bucketName, common.LatestPrefixFileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to delete the existing latest_prefix file in bucket: %s", bucketName)
+		}
+
+		// Write new latest_prefix file
+		err = utils.WriteToBucket(bucketName, "", common.LatestPrefixFileName, []byte(objectPrefix))
+		if err != nil {
+			return errors.Wrapf(err, "failed to write latest_prefix file under bucket: %s", bucketName)
+		}
+	} else {
+		// Dry run specified.
+		log.Printf(
+			"Dry run specified. Skipping the update of %s with folder name %s under bucket %s",
+			common.LatestPrefixFileName,
+			objectPrefix,
+			bucketName)
+	}
+
+	return nil
 }

@@ -41,6 +41,11 @@ func (c *cloudflareNetworkCrawler) GetProviderKey() common.Provider {
 	return common.Cloudflare
 }
 
+func (c *cloudflareNetworkCrawler) GetNumRequiredIPPrefixes() int {
+	// Observed from past .json. In past we had 21
+	return 15
+}
+
 func (c *cloudflareNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkRanges, error) {
 	networkData, err := c.fetch()
 	if err != nil {
