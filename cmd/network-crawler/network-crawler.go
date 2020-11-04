@@ -246,7 +246,7 @@ func getFolderName() string {
 
 func updateLatestPrefixPointer(isDryRun bool, bucketName, objectPrefix string) error {
 	if !isDryRun {
-		prefix := filepath.Join(common.MasterBucketPrefix, objectPrefix)
+		prefix := filepath.Join(common.MasterBucketPrefix, "")
 		// Write new latest_prefix file
 		err := uploadObjectWithPrefix(bucketName, prefix, common.LatestPrefixFileName, []byte(objectPrefix))
 		if err != nil {
