@@ -191,11 +191,12 @@ func uploadExternalNetworkSources(
 	}
 
 	if !isDryRun {
-		err := uploadObjectWithPrefix(bucketName, objectPrefix, common.NetworkFileName, data)
+		prefix := filepath.Join(common.MasterBucketPrefix, objectPrefix)
+		err := uploadObjectWithPrefix(bucketName, prefix, common.NetworkFileName, data)
 		if err != nil {
 			return errors.Wrap(err, "failed to upload network ranges")
 		}
-		err = uploadObjectWithPrefix(bucketName, objectPrefix, common.ChecksumFileName, []byte(cksum))
+		err = uploadObjectWithPrefix(bucketName, prefix, common.ChecksumFileName, []byte(cksum))
 		if err != nil {
 			return errors.Wrapf(err, "content upload succeeded but checksum upload has failed. Checksum: %s", cksum)
 		}
@@ -214,8 +215,7 @@ func uploadExternalNetworkSources(
 	return nil
 }
 
-func uploadObjectWithPrefix(bucketName, objectPrefix, objectName string, data []byte) error {
-	prefix := filepath.Join(common.MasterBucketPrefix, objectPrefix)
+func uploadObjectWithPrefix(bucketName, prefix, objectName string, data []byte) error {
 	err := utils.WriteToBucket(bucketName, prefix, objectName, data)
 	if err != nil {
 		return errors.Wrapf(
@@ -246,8 +246,9 @@ func getFolderName() string {
 
 func updateLatestPrefixPointer(isDryRun bool, bucketName, objectPrefix string) error {
 	if !isDryRun {
+		prefix := filepath.Join(common.MasterBucketPrefix, objectPrefix)
 		// Write new latest_prefix file
-		err := uploadObjectWithPrefix(bucketName, "", common.LatestPrefixFileName, []byte(objectPrefix))
+		err := uploadObjectWithPrefix(bucketName, prefix, common.LatestPrefixFileName, []byte(objectPrefix))
 		if err != nil {
 			return errors.Wrapf(err, "failed to write latest_prefix file under bucket: %s", bucketName)
 		}
