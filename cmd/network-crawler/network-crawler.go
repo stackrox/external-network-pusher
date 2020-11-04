@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -214,12 +215,13 @@ func uploadExternalNetworkSources(
 }
 
 func uploadObjectWithPrefix(bucketName, objectPrefix, objectName string, data []byte) error {
-	err := utils.WriteToBucket(bucketName, objectPrefix, objectName, data)
+	prefix := filepath.Join(common.MasterBucketPrefix, objectPrefix)
+	err := utils.WriteToBucket(bucketName, prefix, objectName, data)
 	if err != nil {
 		return errors.Wrapf(
 			err,
 			"failed to upload content with prefix %s and name %s",
-			objectPrefix,
+			prefix,
 			objectName)
 	}
 	return nil
@@ -244,14 +246,8 @@ func getFolderName() string {
 
 func updateLatestPrefixPointer(isDryRun bool, bucketName, objectPrefix string) error {
 	if !isDryRun {
-		// Check and delete the existing latest_prefix pointer
-		err := utils.DeleteObjectWithPrefix(bucketName, common.LatestPrefixFileName)
-		if err != nil {
-			return errors.Wrapf(err, "failed to delete the existing latest_prefix file in bucket: %s", bucketName)
-		}
-
 		// Write new latest_prefix file
-		err = utils.WriteToBucket(bucketName, "", common.LatestPrefixFileName, []byte(objectPrefix))
+		err := uploadObjectWithPrefix(bucketName, "", common.LatestPrefixFileName, []byte(objectPrefix))
 		if err != nil {
 			return errors.Wrapf(err, "failed to write latest_prefix file under bucket: %s", bucketName)
 		}

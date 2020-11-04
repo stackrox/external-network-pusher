@@ -23,6 +23,10 @@ const ChecksumFileName = "checksum"
 // folder name of the latest crawler output
 const LatestPrefixFileName = "latest_prefix"
 
+// MasterBucketPrefix is the tpo level prefix we use for all the uploads we do
+// in this crawler
+const MasterBucketPrefix = "external-networks"
+
 // Provider is a string representing different external network providers
 type Provider string
 
