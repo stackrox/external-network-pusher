@@ -92,7 +92,9 @@ func publishExternalNetworks(
 ) error {
 	// We use the folder name as object prefix so that all the objects
 	// uploaded as part of this run appears under the same folder
-	objectPrefix := getFolderName()
+	folderName := getFolderName()
+	objectPrefix := getObjectPrefix(folderName)
+	latestPrefixFilePrefix := getObjectPrefix("")
 
 	var allExternalNetworks common.ExternalNetworkSources
 	for _, crawler := range crawlerImpls {
@@ -121,7 +123,7 @@ func publishExternalNetworks(
 	}
 
 	// Update the latest_prefix pointer
-	err = updateLatestPrefixPointer(isDryRun, bucketName, objectPrefix)
+	err = updateLatestPrefixPointer(isDryRun, bucketName, folderName, latestPrefixFilePrefix)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update latest pointer with prefix: %s", objectPrefix)
 	}
@@ -191,12 +193,11 @@ func uploadExternalNetworkSources(
 	}
 
 	if !isDryRun {
-		prefix := filepath.Join(common.MasterBucketPrefix, objectPrefix)
-		err := uploadObjectWithPrefix(bucketName, prefix, common.NetworkFileName, data)
+		err := uploadObjectWithPrefix(bucketName, objectPrefix, common.NetworkFileName, data)
 		if err != nil {
 			return errors.Wrap(err, "failed to upload network ranges")
 		}
-		err = uploadObjectWithPrefix(bucketName, prefix, common.ChecksumFileName, []byte(cksum))
+		err = uploadObjectWithPrefix(bucketName, objectPrefix, common.ChecksumFileName, []byte(cksum))
 		if err != nil {
 			return errors.Wrapf(err, "content upload succeeded but checksum upload has failed. Checksum: %s", cksum)
 		}
@@ -239,16 +240,20 @@ func marshalAndGetCksum(v interface{}) ([]byte, string, error) {
 	return data, checksum, nil
 }
 
+func getObjectPrefix(prefixes ...string) string {
+	prefixes = append([]string{common.MasterBucketPrefix}, prefixes...)
+	return filepath.Join(prefixes...)
+}
+
 func getFolderName() string {
 	// Some Go magic here. DO NOT CHANGE THIS STRING
 	return time.Now().UTC().Format("2006-01-02 15-04-05")
 }
 
-func updateLatestPrefixPointer(isDryRun bool, bucketName, objectPrefix string) error {
+func updateLatestPrefixPointer(isDryRun bool, bucketName, latestFolderName, filePrefix string) error {
 	if !isDryRun {
-		prefix := filepath.Join(common.MasterBucketPrefix, "")
 		// Write new latest_prefix file
-		err := uploadObjectWithPrefix(bucketName, prefix, common.LatestPrefixFileName, []byte(objectPrefix))
+		err := uploadObjectWithPrefix(bucketName, filePrefix, common.LatestPrefixFileName, []byte(latestFolderName))
 		if err != nil {
 			return errors.Wrapf(err, "failed to write latest_prefix file under bucket: %s", bucketName)
 		}
@@ -257,7 +262,7 @@ func updateLatestPrefixPointer(isDryRun bool, bucketName, objectPrefix string) e
 		log.Printf(
 			"Dry run specified. Skipping the update of %s with folder name %s under bucket %s",
 			common.LatestPrefixFileName,
-			objectPrefix,
+			latestFolderName,
 			bucketName)
 	}
 
