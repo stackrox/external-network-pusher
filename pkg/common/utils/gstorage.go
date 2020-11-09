@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"io/ioutil"
 	"path/filepath"
 	"time"
 
@@ -49,6 +50,11 @@ func WriteToBucket(
 // DeleteObjectWithPrefix deletes any object in the specified bucket that
 // starts with the specified prefix.
 func DeleteObjectWithPrefix(bucketName, prefix string) error {
+	names, err := GetAllObjectNamesWithPrefix(bucketName, prefix)
+	if err != nil {
+		return err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), gCloudClientTimeout)
 	defer cancel()
 	client, err := storage.NewClient(ctx)
@@ -57,21 +63,6 @@ func DeleteObjectWithPrefix(bucketName, prefix string) error {
 	}
 
 	bucket := client.Bucket(bucketName)
-	query := &storage.Query{Prefix: prefix}
-
-	var names []string
-	it := bucket.Objects(ctx, query)
-	for {
-		attrs, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			errors.Wrapf(err, "failed while trying to list and traverse objects in bucket %s", bucketName)
-			return err
-		}
-		names = append(names, attrs.Name)
-	}
 
 	for _, name := range names {
 		err = bucket.Object(name).Delete(ctx)
@@ -86,5 +77,75 @@ func DeleteObjectWithPrefix(bucketName, prefix string) error {
 		}
 	}
 
+	return nil
+}
+
+// GetAllObjectNamesWithPrefix returns all object start with specified prefix
+// under the specified bucket
+func GetAllObjectNamesWithPrefix(bucketName, prefix string) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), gCloudClientTimeout)
+	defer cancel()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	bucket := client.Bucket(bucketName)
+	query := &storage.Query{Prefix: prefix}
+
+	var names []string
+	it := bucket.Objects(ctx, query)
+	for {
+		attrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			errors.Wrapf(err, "failed while trying to list and traverse objects in bucket %s", bucketName)
+			return nil, err
+		}
+		names = append(names, attrs.Name)
+	}
+
+	return names, nil
+}
+
+// Read returns the content of the specified file under specified bucket
+func Read(bucketName, objectName string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), gCloudClientTimeout)
+	defer cancel()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reader, err := client.Bucket(bucketName).Object(objectName).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// Copy copies the specified object into the specified target
+func Copy(srcBucketName, srcObjectName, dstBucketName, dstObjectName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), gCloudClientTimeout)
+	defer cancel()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	src := client.Bucket(srcBucketName).Object(srcObjectName)
+	dst := client.Bucket(dstBucketName).Object(dstObjectName)
+
+	if _, err := dst.CopierFrom(src).Run(ctx); err != nil {
+		return errors.Wrapf(err, "Object(%q).CopierFrom(%q)", dstObjectName, srcObjectName)
+	}
 	return nil
 }

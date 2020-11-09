@@ -92,9 +92,9 @@ func publishExternalNetworks(
 ) error {
 	// We use the folder name as object prefix so that all the objects
 	// uploaded as part of this run appears under the same folder
-	folderName := getFolderName()
-	objectPrefix := getObjectPrefix(folderName)
-	latestPrefixFilePrefix := getObjectPrefix("")
+	timestamp := getTimestamp()
+	latestObjectPrefix := getObjectPrefix(common.LatestFolderName)
+	topLevelPrefixes := getObjectPrefix("")
 
 	var allExternalNetworks common.ExternalNetworkSources
 	for _, crawler := range crawlerImpls {
@@ -116,16 +116,16 @@ func publishExternalNetworks(
 		return errors.Wrap(err, "external network sources validation failed")
 	}
 
-	// Create and upload the object file
-	err = uploadExternalNetworkSources(&allExternalNetworks, isDryRun, bucketName, objectPrefix)
+	// Rename the existing latest files
+	err = copyExistingLatestFilesToTimestampName(isDryRun, bucketName, latestObjectPrefix, topLevelPrefixes)
 	if err != nil {
-		return errors.Wrap(err, "failed to upload data to bucket")
+		return errors.Wrap(err, "failed to rename existing latest files")
 	}
 
-	// Update the latest_prefix pointer
-	err = updateLatestPrefixPointer(isDryRun, bucketName, folderName, latestPrefixFilePrefix)
+	// Create and upload the object file
+	err = uploadExternalNetworkSources(&allExternalNetworks, isDryRun, bucketName, latestObjectPrefix, timestamp)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update latest pointer with prefix: %s", objectPrefix)
+		return errors.Wrap(err, "failed to upload data to bucket")
 	}
 
 	log.Print("Finished crawling all providers.")
@@ -182,10 +182,62 @@ func validateExternalNetworks(crawlers []common.NetworkCrawler, networks *common
 	return nil
 }
 
+func copyExistingLatestFilesToTimestampName(isDryRun bool, bucketName, latestObjectPrefix, topLevelPrefixes string) error {
+	existingLatestFileNames, err := utils.GetAllObjectNamesWithPrefix(bucketName, latestObjectPrefix)
+	if err != nil {
+		return err
+	}
+	if len(existingLatestFileNames) == 0 {
+		log.Print("Uploading for the first time. Not renaming anything...")
+		return nil
+	}
+	if len(existingLatestFileNames) != 3 {
+		return fmt.Errorf(
+			"there should be three different files: %s, %s, and %s",
+			common.NetworkFileName,
+			common.ChecksumFileName,
+			common.TimestampFileName)
+	}
+	var timestampVal []byte
+	for _, name := range existingLatestFileNames {
+		if strings.Contains(name, common.TimestampFileName) {
+			timestampVal, err = utils.Read(bucketName, name)
+			if err != nil {
+				return errors.Wrapf(err, "failed while trying to read from the existing timestamp file: %s", name)
+			}
+		}
+	}
+	for _, name := range existingLatestFileNames {
+		var filename string
+		switch filepath.Base(name) {
+		case common.NetworkFileName:
+			filename = common.NetworkFileName
+		case common.ChecksumFileName:
+			filename = common.ChecksumFileName
+		case common.TimestampFileName:
+			filename = common.TimestampFileName
+		default:
+			return fmt.Errorf("unrecogniezd file name: %s", name)
+		}
+
+		newName := filepath.Join(topLevelPrefixes, string(timestampVal), filename)
+		if isDryRun {
+			log.Printf("Dry run specified. Not renaming %s -> %s", name, newName)
+		} else {
+			err := utils.Copy(bucketName, name, bucketName, newName)
+			if err != nil {
+				return errors.Wrap(err, "failed to copy existing latest files to timestamped folder")
+			}
+		}
+	}
+
+	return nil
+}
+
 func uploadExternalNetworkSources(
 	networks *common.ExternalNetworkSources,
 	isDryRun bool,
-	bucketName, objectPrefix string,
+	bucketName, objectPrefix, timestamp string,
 ) error {
 	data, cksum, err := marshalAndGetCksum(networks)
 	if err != nil {
@@ -201,6 +253,10 @@ func uploadExternalNetworkSources(
 		if err != nil {
 			return errors.Wrapf(err, "content upload succeeded but checksum upload has failed. Checksum: %s", cksum)
 		}
+		err = uploadObjectWithPrefix(bucketName, objectPrefix, common.TimestampFileName, []byte(timestamp))
+		if err != nil {
+			return errors.Wrapf(err, "content upload succeeded but timestamp upload has failed. Checksum: %s", timestamp)
+		}
 		log.Print("Successfully uploaded all contents and checksum.")
 		log.Print("++++++")
 		log.Printf("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName)
@@ -208,9 +264,10 @@ func uploadExternalNetworkSources(
 	} else {
 		// In dry run, just print out the package name and hashes
 		log.Printf(
-			"Dry run specified. Folder name is: %s. Checksum computed is: %s",
+			"Dry run specified. Folder name is: %s. Checksum computed is: %s. Timestamp is: %s",
 			objectPrefix,
-			cksum)
+			cksum,
+			timestamp)
 	}
 
 	return nil
@@ -245,26 +302,7 @@ func getObjectPrefix(prefixes ...string) string {
 	return filepath.Join(prefixes...)
 }
 
-func getFolderName() string {
+func getTimestamp() string {
 	// Some Go magic here. DO NOT CHANGE THIS STRING
 	return time.Now().UTC().Format("2006-01-02 15-04-05")
-}
-
-func updateLatestPrefixPointer(isDryRun bool, bucketName, latestFolderName, filePrefix string) error {
-	if !isDryRun {
-		// Write new latest_prefix file
-		err := uploadObjectWithPrefix(bucketName, filePrefix, common.LatestPrefixFileName, []byte(latestFolderName))
-		if err != nil {
-			return errors.Wrapf(err, "failed to write latest_prefix file under bucket: %s", bucketName)
-		}
-	} else {
-		// Dry run specified.
-		log.Printf(
-			"Dry run specified. Skipping the update of %s with folder name %s under bucket %s",
-			common.LatestPrefixFileName,
-			latestFolderName,
-			bucketName)
-	}
-
-	return nil
 }
