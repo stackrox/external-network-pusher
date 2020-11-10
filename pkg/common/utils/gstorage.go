@@ -145,7 +145,7 @@ func Copy(srcBucketName, srcObjectName, dstBucketName, dstObjectName string) err
 	dst := client.Bucket(dstBucketName).Object(dstObjectName)
 
 	if _, err := dst.CopierFrom(src).Run(ctx); err != nil {
-		return errors.Wrapf(err, "Object(%q).CopierFrom(%q)", dstObjectName, srcObjectName)
+		return errors.Wrapf(err, "failed while copying to %s from %s", dstObjectName, srcObjectName)
 	}
 	return nil
 }

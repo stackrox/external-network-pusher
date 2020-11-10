@@ -92,7 +92,7 @@ func publishExternalNetworks(
 ) error {
 	// We use the folder name as object prefix so that all the objects
 	// uploaded as part of this run appears under the same folder
-	timestamp := getTimestamp()
+	timestamp := getCurrentTimestamp()
 	latestObjectPrefix := getObjectPrefix(common.LatestFolderName)
 	topLevelPrefixes := getObjectPrefix("")
 
@@ -188,7 +188,7 @@ func copyExistingLatestFilesToTimestampName(isDryRun bool, bucketName, latestObj
 		return err
 	}
 	if len(existingLatestFileNames) == 0 {
-		log.Print("Uploading for the first time. Not renaming anything...")
+		log.Printf("No filed found under %s. Not renaming anything...", latestObjectPrefix)
 		return nil
 	}
 	if len(existingLatestFileNames) != 3 {
@@ -217,7 +217,7 @@ func copyExistingLatestFilesToTimestampName(isDryRun bool, bucketName, latestObj
 		case common.TimestampFileName:
 			filename = common.TimestampFileName
 		default:
-			return fmt.Errorf("unrecogniezd file name: %s", name)
+			return fmt.Errorf("unrecognized file name: %s", name)
 		}
 
 		newName := filepath.Join(topLevelPrefixes, string(timestampVal), filename)
@@ -302,7 +302,7 @@ func getObjectPrefix(prefixes ...string) string {
 	return filepath.Join(prefixes...)
 }
 
-func getTimestamp() string {
+func getCurrentTimestamp() string {
 	// Some Go magic here. DO NOT CHANGE THIS STRING
 	return time.Now().UTC().Format("2006-01-02 15-04-05")
 }
