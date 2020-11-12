@@ -4,6 +4,13 @@ import (
 	"fmt"
 )
 
+// BucketURLTextColor is for setting the output test
+// color of bucket URL. Currently it is green.
+const BucketURLTextColor = "\033[32m"
+
+// ResetTextColor is used when test color is reset
+const ResetTextColor = "\033[0m"
+
 // DefaultRegion is used when a vendor does not
 // specify regions for the IP ranges provided
 const DefaultRegion = "unknown"
@@ -30,6 +37,11 @@ const LatestFolderName = "latest"
 // MasterBucketPrefix is the top level prefix we use for all the uploads we do
 // in this crawler
 const MasterBucketPrefix = "external-networks"
+
+// MaxNumDefinitions is the maximum number of runs(outputted network definitions)
+// we remember in the bucket specified in script.
+// Oldest record should be deleted first.
+const MaxNumDefinitions = 10
 
 // Provider is a string representing different external network providers
 type Provider string

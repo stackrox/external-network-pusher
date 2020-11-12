@@ -81,7 +81,8 @@ func DeleteObjectWithPrefix(bucketName, prefix string) error {
 }
 
 // GetAllObjectNamesWithPrefix returns all object start with specified prefix
-// under the specified bucket
+// under the specified bucket. If no prefix is supplied, it returns all objects
+// under that bucket.
 func GetAllObjectNamesWithPrefix(bucketName, prefix string) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), gCloudClientTimeout)
 	defer cancel()
@@ -91,7 +92,10 @@ func GetAllObjectNamesWithPrefix(bucketName, prefix string) ([]string, error) {
 	}
 
 	bucket := client.Bucket(bucketName)
-	query := &storage.Query{Prefix: prefix}
+	var query *storage.Query
+	if prefix != "" {
+		query = &storage.Query{Prefix: prefix}
+	}
 
 	var names []string
 	it := bucket.Objects(ctx, query)
@@ -101,8 +105,7 @@ func GetAllObjectNamesWithPrefix(bucketName, prefix string) ([]string, error) {
 			break
 		}
 		if err != nil {
-			errors.Wrapf(err, "failed while trying to list and traverse objects in bucket %s", bucketName)
-			return nil, err
+			return nil, errors.Wrapf(err, "failed while trying to list and traverse objects in bucket %s", bucketName)
 		}
 		names = append(names, attrs.Name)
 	}
@@ -148,4 +151,25 @@ func Copy(srcBucketName, srcObjectName, dstBucketName, dstObjectName string) err
 		return errors.Wrapf(err, "failed while copying to %s from %s", dstObjectName, srcObjectName)
 	}
 	return nil
+}
+
+// GetAllPrefixesUnderBucket returns all the prefixes (sub-folders at the bottom most layer) within
+// the specified bucket.
+func GetAllPrefixesUnderBucket(bucketName string) ([]string, error) {
+	objectNames, err := GetAllObjectNamesWithPrefix(bucketName, "")
+	if err != nil {
+		return nil, err
+	}
+
+	prefixes := make(map[string]struct{})
+	for _, name := range objectNames {
+		prefix := filepath.Dir(name)
+		prefixes[prefix] = struct{}{}
+	}
+
+	result := make([]string, 0, len(prefixes))
+	for prefix := range prefixes {
+		result = append(result, prefix)
+	}
+	return result, nil
 }

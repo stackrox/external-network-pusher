@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -82,7 +83,17 @@ func run() error {
 	log.Printf("Crawling from this list of providers: %s", strings.Join(crawlingProviders, ", "))
 
 	err := publishExternalNetworks(*flagBucketName, crawlerImpls, *flagDryRun)
-	return err
+	if err != nil {
+		return errors.Wrap(err, "failed publishing external network ranges")
+	}
+
+	// After uploading new data, we should keep the total number of entries in bucket to be under a limit
+	err = truncateOldestExternalNetworksDefnitions(*flagBucketName, *flagDryRun)
+	if err != nil {
+		return errors.Wrap(err, "failed to check remove oldest networks definitions")
+	}
+
+	return nil
 }
 
 func publishExternalNetworks(
@@ -239,6 +250,7 @@ func uploadExternalNetworkSources(
 	isDryRun bool,
 	bucketName, objectPrefix, timestamp string,
 ) error {
+	log.Printf("Uploading crawled networks...")
 	data, cksum, err := marshalAndGetCksum(networks)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal external networks")
@@ -258,13 +270,14 @@ func uploadExternalNetworkSources(
 			return errors.Wrapf(err, "content upload succeeded but timestamp upload has failed. Checksum: %s", timestamp)
 		}
 		log.Print("Successfully uploaded all contents and checksum.")
-		log.Print("++++++")
-		log.Printf("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName)
-		log.Print("++++++")
+		log.Print("+++++++++++++++++++++")
+		bucketURL := fmt.Sprintf("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName)
+		log.Println(common.BucketURLTextColor, bucketURL, common.ResetTextColor)
+		log.Print("+++++++++++++++++++++")
 	} else {
 		// In dry run, just print out the package name and hashes
 		log.Printf(
-			"Dry run specified. Folder name is: %s. Checksum computed is: %s. Timestamp is: %s",
+			"Dry run specified. Skipping upload. Folder name is: %s. Checksum computed is: %s. Timestamp is: %s",
 			objectPrefix,
 			cksum,
 			timestamp)
@@ -305,4 +318,45 @@ func getObjectPrefix(prefixes ...string) string {
 func getCurrentTimestamp() string {
 	// Some Go magic here. DO NOT CHANGE THIS STRING
 	return time.Now().UTC().Format("2006-01-02 15-04-05")
+}
+
+// NOTE: currently it only removes the oldest one. We can also enhance it to remove
+// until common.MaxNumDefinitions is met but is not implemented here.
+func truncateOldestExternalNetworksDefnitions(bucketName string, isDryRun bool) error {
+	if isDryRun {
+		log.Print("Dry run specified. Skipping to truncate any network definitions.")
+		return nil
+	}
+
+	prefixes, err := utils.GetAllPrefixesUnderBucket(bucketName)
+	if err != nil {
+		return errors.Wrapf(err, "failed getting all prefixes under bucket %s", bucketName)
+	}
+	if len(prefixes) <= common.MaxNumDefinitions {
+		// Less than the max number of records we keep in the bucket. Return
+		return nil
+	}
+
+	log.Printf("Found %d records. Max allowed is: %d. Truncating the oldest record...", len(prefixes), common.MaxNumDefinitions)
+
+	// Sort and get the oldest(smallest) date
+	sort.Strings(prefixes)
+	prefixToDelete := prefixes[0]
+
+	// We should not by any chance delete the latest record. Guard against that
+	if filepath.Base(prefixToDelete) == common.LatestFolderName {
+		return common.ErroneousPrefixOrderingError(bucketName, prefixes)
+	}
+
+	log.Printf("Deleting objects with folder name: %s", prefixToDelete)
+	err = utils.DeleteObjectWithPrefix(bucketName, prefixToDelete)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"failed to delete objects with prefix: %s under bucket %s",
+			prefixToDelete,
+			bucketName)
+	}
+
+	return nil
 }
