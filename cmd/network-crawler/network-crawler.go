@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/external-network-pusher/pkg/common/utils"
@@ -88,7 +89,7 @@ func run() error {
 	}
 
 	// After uploading new data, we should keep the total number of entries in bucket to be under a limit
-	err = truncateOldestExternalNetworksDefnitions(*flagBucketName, *flagDryRun)
+	err = truncateOutdatedExternalNetworksDefnitions(*flagBucketName, *flagDryRun)
 	if err != nil {
 		return errors.Wrap(err, "failed to check remove oldest networks definitions")
 	}
@@ -271,8 +272,8 @@ func uploadExternalNetworkSources(
 		}
 		log.Print("Successfully uploaded all contents and checksum.")
 		log.Print("+++++++++++++++++++++")
-		bucketURL := fmt.Sprintf("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName)
-		log.Println(common.BucketURLTextColor, bucketURL, common.ResetTextColor)
+		log.Print(
+			color.GreenString("Please check bucket: https://console.cloud.google.com/storage/browser/%s", bucketName))
 		log.Print("+++++++++++++++++++++")
 	} else {
 		// In dry run, just print out the package name and hashes
@@ -320,9 +321,7 @@ func getCurrentTimestamp() string {
 	return time.Now().UTC().Format("2006-01-02 15-04-05")
 }
 
-// NOTE: currently it only removes the oldest one. We can also enhance it to remove
-// until common.MaxNumDefinitions is met but is not implemented here.
-func truncateOldestExternalNetworksDefnitions(bucketName string, isDryRun bool) error {
+func truncateOutdatedExternalNetworksDefnitions(bucketName string, isDryRun bool) error {
 	if isDryRun {
 		log.Print("Dry run specified. Skipping to truncate any network definitions.")
 		return nil
@@ -337,25 +336,31 @@ func truncateOldestExternalNetworksDefnitions(bucketName string, isDryRun bool) 
 		return nil
 	}
 
-	log.Printf("Found %d records. Max allowed is: %d. Truncating the oldest record...", len(prefixes), common.MaxNumDefinitions)
+	log.Printf("Found %d records. Max allowed is: %d. Truncating some records...", len(prefixes), common.MaxNumDefinitions)
 
 	// Sort and get the oldest(smallest) date
 	sort.Strings(prefixes)
-	prefixToDelete := prefixes[0]
+	prefixesToDelete := prefixes[:len(prefixes)-common.MaxNumDefinitions]
 
 	// We should not by any chance delete the latest record. Guard against that
-	if filepath.Base(prefixToDelete) == common.LatestFolderName {
-		return common.ErroneousPrefixOrderingError(bucketName, prefixes)
+	for _, prefix := range prefixesToDelete {
+		if filepath.Base(prefix) == common.LatestFolderName {
+			return common.ErroneousPrefixOrderingError(bucketName, prefixes)
+		}
 	}
 
-	log.Printf("Deleting objects with folder name: %s", prefixToDelete)
-	err = utils.DeleteObjectWithPrefix(bucketName, prefixToDelete)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"failed to delete objects with prefix: %s under bucket %s",
-			prefixToDelete,
-			bucketName)
+	// After verifications, proceed to delete needed records
+	log.Print(
+		color.RedString("Deleting objects with folder names: %s", strings.Join(prefixesToDelete, ",")))
+	for _, prefix := range prefixesToDelete {
+		err = utils.DeleteObjectWithPrefix(bucketName, prefix)
+		if err != nil {
+			return errors.Wrapf(
+				err,
+				"failed to delete objects with prefix: %s under bucket %s",
+				prefix,
+				bucketName)
+		}
 	}
 
 	return nil

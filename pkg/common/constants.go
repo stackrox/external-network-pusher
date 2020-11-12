@@ -4,13 +4,6 @@ import (
 	"fmt"
 )
 
-// BucketURLTextColor is for setting the output test
-// color of bucket URL. Currently it is green.
-const BucketURLTextColor = "\033[32m"
-
-// ResetTextColor is used when test color is reset
-const ResetTextColor = "\033[0m"
-
 // DefaultRegion is used when a vendor does not
 // specify regions for the IP ranges provided
 const DefaultRegion = "unknown"
