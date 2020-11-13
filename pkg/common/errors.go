@@ -69,3 +69,8 @@ func ErroneousPrefixOrderingError(bucketName string, prefixes []string) error {
 		len(prefixes),
 		prefixes)
 }
+
+// NoBucketNameSpecified is returned when the script is invoked without a bucket name
+func NoBucketNameSpecified() error {
+	return errors.New("bucket name not specified")
+}

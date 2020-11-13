@@ -68,6 +68,10 @@ func run() error {
 	flag.Var(&flagSkippedProviders, "skipped-providers", skippedProvidersUsage)
 	flag.Parse()
 
+	if flagBucketName == nil || *flagBucketName == "" {
+		return common.NoBucketNameSpecified()
+	}
+
 	if *flagDryRun {
 		log.Print("Dry run specified. Instead of uploading the content to bucket will just print to stdout.")
 	}
