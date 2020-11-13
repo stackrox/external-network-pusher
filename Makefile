@@ -82,19 +82,19 @@ tag:
 .PHONY: build
 build:
 	@echo "+ $@"
-	@mkdir -p "${GOBIN}"
+	@mkdir -p "$(GOBIN)"
 	@CGO_ENABLED=0 GOOS=linux \
 	go build -a -ldflags "-s -w" \
-		-o ${GOBIN}/linux/network-crawler ./cmd/network-crawler
+		-o $(GOBIN)/linux/network-crawler ./cmd/network-crawler
 	@CGO_ENABLED=0 GOOS=darwin \
 	go build -a -ldflags "-s -w" \
-		-o ${GOBIN}/darwin/network-crawler ./cmd/network-crawler
-	@cp ${GOBIN}/${HOST_OS}/network-crawler ${GOBIN}/network-crawler
+		-o $(GOBIN)/darwin/network-crawler ./cmd/network-crawler
+	@cp $(GOBIN)/$(HOST_OS)/network-crawler $(GOBIN)/network-crawler
 
 .PHONY: image
 image: build
 	@echo "+ $@"
-	@cp ${GOBIN}/linux/network-crawler ./image
+	@cp $(GOBIN)/linux/network-crawler ./image
 	@docker build -t us.gcr.io/stackrox-hub/network-crawler:$(TAG) image
 
 .PHONY: push
