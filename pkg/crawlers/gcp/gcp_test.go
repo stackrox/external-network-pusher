@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stackrox/external-network-pusher/pkg/common/utils"
+	"github.com/stackrox/external-network-pusher/pkg/common/testutils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,8 +15,8 @@ func TestGcpParseNetwork(t *testing.T) {
 	region1, region2 := "asia-east1", "europe-west4"
 
 	testData := gcpNetworkSpec{
-		SyncToken:    utils.UnusedString,
-		CreationTime: utils.UnusedString,
+		SyncToken:    testutils.UnusedString,
+		CreationTime: testutils.UnusedString,
 		Prefixes: []gcpIPSpec{
 			{
 				Ipv4Prefix: ipv41,
@@ -51,7 +51,7 @@ func TestGcpParseNetwork(t *testing.T) {
 
 	// Two regions in total
 	require.Equal(t, 2, len(parsedResult.RegionNetworks))
-	regionNameToDetail := utils.GetRegionNameToDetails(parsedResult)
+	regionNameToDetail := testutils.GetRegionNameToDetails(parsedResult)
 
 	// Check content of the first region
 	{
@@ -60,10 +60,10 @@ func TestGcpParseNetwork(t *testing.T) {
 		// Two services in total for region1
 		require.Equal(t, 2, len(firstRegionNetworks.ServiceNetworks))
 
-		serviceToIPs := utils.GetServiceNameToIPs(firstRegionNetworks)
+		serviceToIPs := testutils.GetServiceNameToIPs(firstRegionNetworks)
 
 		// service1
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service1,
@@ -71,7 +71,7 @@ func TestGcpParseNetwork(t *testing.T) {
 			[]string{ipv61})
 
 		// service2
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service2,
@@ -85,14 +85,79 @@ func TestGcpParseNetwork(t *testing.T) {
 		// Only one service in region2
 		require.Equal(t, 1, len(secondRegionNetworks.ServiceNetworks))
 
-		serviceToIPs := utils.GetServiceNameToIPs(secondRegionNetworks)
+		serviceToIPs := testutils.GetServiceNameToIPs(secondRegionNetworks)
 
 		// service1
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service1,
 			[]string{ipv42},
+			[]string{})
+	}
+}
+
+func TestGCPRegionServiceRedundancyCheck(t *testing.T) {
+	addr := "34.80.0.0/15"
+	service1, service2 := "Google Cloud", "Google Ads"
+	regionName := "test-region"
+
+	testData := gcpNetworkSpec{
+		SyncToken:    testutils.UnusedString,
+		CreationTime: testutils.UnusedString,
+		Prefixes: []gcpIPSpec{
+			{
+				Ipv4Prefix: addr,
+				Service:    service1,
+				Scope:      regionName,
+			},
+			{
+				Ipv4Prefix: addr,
+				Service:    service1,
+				Scope:      regionName,
+			},
+			{
+				Ipv4Prefix: addr,
+				Service:    service2,
+				Scope:      regionName,
+			},
+		},
+	}
+	networks, err := json.Marshal(testData)
+	require.Nil(t, err)
+
+	crawler := gcpNetworkCrawler{}
+	parsedResult, err := crawler.parseNetworks(networks)
+	require.Nil(t, err)
+	require.Equal(t, parsedResult.ProviderName, crawler.GetProviderKey().String())
+
+	// One regions in total
+	require.Equal(t, 1, len(parsedResult.RegionNetworks))
+	regionNameToDetail := testutils.GetRegionNameToDetails(parsedResult)
+
+	// Check content of the region
+	{
+		firstRegionNetworks, ok := regionNameToDetail[regionName]
+		require.True(t, ok)
+		// Two services in total for region1
+		require.Equal(t, 2, len(firstRegionNetworks.ServiceNetworks))
+
+		serviceToIPs := testutils.GetServiceNameToIPs(firstRegionNetworks)
+
+		// service1
+		testutils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			service1,
+			[]string{addr},
+			[]string{})
+
+		// service2
+		testutils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			service2,
+			[]string{addr},
 			[]string{})
 	}
 }

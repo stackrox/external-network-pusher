@@ -81,14 +81,19 @@ func (c *awsNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 		return nil, errors.Wrap(err, "failed to unmarshal Amazon's network data")
 	}
 
-	providerNetworks := common.ProviderNetworkRanges{ProviderName: c.GetProviderKey().String()}
+	providerNetworks := common.NewProviderNetworkRanges(c.GetProviderKey().String())
 	for _, ipv4Spec := range awsNetworkSpec.Prefixes {
 		if ipv4Spec.IPPrefix == "" {
 			// Empty IPv4. Something might be wrong here. Logging for warning
 			log.Printf("Received an empty IPv4 definition: %v", ipv4Spec)
 			continue
 		}
-		err := providerNetworks.AddIPPrefix(ipv4Spec.Region, ipv4Spec.Service, ipv4Spec.IPPrefix)
+		err :=
+			providerNetworks.AddIPPrefix(
+				ipv4Spec.Region,
+				ipv4Spec.Service,
+				ipv4Spec.IPPrefix,
+				c.getComputeRedundancyFn())
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to add Amazon IPv4 prefix: %s", ipv4Spec.IPPrefix)
 		}
@@ -99,11 +104,20 @@ func (c *awsNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 			log.Printf("Received an empty IPv6 definition: %v", ipv6Spec)
 			continue
 		}
-		err := providerNetworks.AddIPPrefix(ipv6Spec.Region, ipv6Spec.Service, ipv6Spec.IPv6Prefix)
+		err :=
+			providerNetworks.AddIPPrefix(
+				ipv6Spec.Region,
+				ipv6Spec.Service,
+				ipv6Spec.IPv6Prefix,
+				c.getComputeRedundancyFn())
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to add Amazon IPv6 prefix: %s", ipv6Spec.IPv6Prefix)
 		}
 	}
 
-	return &providerNetworks, nil
+	return providerNetworks, nil
+}
+
+func (c *awsNetworkCrawler) getComputeRedundancyFn() common.IsRedundantRegionServicePairFn {
+	return common.GetDefaultRegionServicePairRedundancyCheck()
 }

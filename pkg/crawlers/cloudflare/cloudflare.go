@@ -74,25 +74,39 @@ func (c *cloudflareNetworkCrawler) parseNetworks(networks []byte) (*common.Provi
 		return nil, errors.Wrap(err, "failed to unmarshal Cloudflare's network data")
 	}
 
-	providerNetworks := common.ProviderNetworkRanges{ProviderName: c.GetProviderKey().String()}
+	providerNetworks := common.NewProviderNetworkRanges(c.GetProviderKey().String())
 	for _, ipv4Str := range cloudflareNetworkSpec.Result.IPv4CIDRs {
 		ipv4Str = unescapeIPPrefix(ipv4Str)
-		err := providerNetworks.AddIPPrefix(common.DefaultRegion, common.DefaultService, ipv4Str)
+		err :=
+			providerNetworks.AddIPPrefix(
+				common.DefaultRegion,
+				common.DefaultService,
+				ipv4Str,
+				c.getComputeRedundancyFn())
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to add IPv4 prefix: %s to the Cloudflare's result", ipv4Str)
 		}
 	}
 	for _, ipv6Str := range cloudflareNetworkSpec.Result.IPv6CIDRs {
 		ipv6Str = unescapeIPPrefix(ipv6Str)
-		err := providerNetworks.AddIPPrefix(common.DefaultRegion, common.DefaultService, ipv6Str)
+		err :=
+			providerNetworks.AddIPPrefix(
+				common.DefaultRegion,
+				common.DefaultService,
+				ipv6Str,
+				c.getComputeRedundancyFn())
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to add IPv6 prefix: %s to the Cloudflare's result", ipv6Str)
 		}
 	}
 
-	return &providerNetworks, nil
+	return providerNetworks, nil
 }
 
 func unescapeIPPrefix(prefix string) string {
 	return strings.ReplaceAll(prefix, `\/`, "/")
+}
+
+func (c *cloudflareNetworkCrawler) getComputeRedundancyFn() common.IsRedundantRegionServicePairFn {
+	return common.GetDefaultRegionServicePairRedundancyCheck()
 }

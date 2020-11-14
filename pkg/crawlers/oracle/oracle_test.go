@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stackrox/external-network-pusher/pkg/common/utils"
+	"github.com/stackrox/external-network-pusher/pkg/common/testutils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +14,7 @@ func TestOCIParseNetwork(t *testing.T) {
 	ipv41, ipv42, ipv43, ipv44, ipv45 := "129.146.0.0/21", "129.146.64.0/18", "158.101.0.0/18", "193.123.0.0/19", "207.135.0.0/22"
 
 	testData := ociNetworkSpec{
-		LastUpdatedTimestamp: utils.UnusedString,
+		LastUpdatedTimestamp: testutils.UnusedString,
 		Regions: []ociRegionNetworkDetails{
 			{
 				Region: region1,
@@ -59,7 +59,7 @@ func TestOCIParseNetwork(t *testing.T) {
 
 	// Two regions in total
 	require.Equal(t, 2, len(parsedResult.RegionNetworks))
-	regionNameToDetail := utils.GetRegionNameToDetails(parsedResult)
+	regionNameToDetail := testutils.GetRegionNameToDetails(parsedResult)
 
 	// region1
 	{
@@ -68,10 +68,10 @@ func TestOCIParseNetwork(t *testing.T) {
 		// Two services in total for region1 (tag1, tag2-tag3)
 		require.Equal(t, 2, len(regionNetworks.ServiceNetworks))
 
-		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
+		serviceToIPs := testutils.GetServiceNameToIPs(regionNetworks)
 		// service1
 		service := toServiceName([]string{tag1})
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service,
@@ -80,7 +80,7 @@ func TestOCIParseNetwork(t *testing.T) {
 
 		// service2
 		service = toServiceName([]string{tag2, tag3})
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service,
@@ -94,10 +94,10 @@ func TestOCIParseNetwork(t *testing.T) {
 		// Two services in total for region2 (tag1, tag2)
 		require.Equal(t, 2, len(regionNetworks.ServiceNetworks))
 
-		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
+		serviceToIPs := testutils.GetServiceNameToIPs(regionNetworks)
 		// service1
 		service := toServiceName([]string{tag1})
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service,
@@ -106,11 +106,79 @@ func TestOCIParseNetwork(t *testing.T) {
 
 		// service2
 		service = toServiceName([]string{tag2})
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service,
 			[]string{ipv45},
+			[]string{})
+	}
+}
+
+func TestOCIRegionServiceRedundancyCheck(t *testing.T) {
+	regionName := "us-phoenix-1"
+	tag1, tag2, tag3 := "OCI", "OSN", "OBJECT_STORAGE"
+	addr := "129.146.0.0/21"
+
+	testData := ociNetworkSpec{
+		LastUpdatedTimestamp: testutils.UnusedString,
+		Regions: []ociRegionNetworkDetails{
+			{
+				Region: regionName,
+				CIDRs: []ociCIDRDefinition{
+					{
+						CIDR: addr,
+						Tags: []string{tag1},
+					},
+					{
+						CIDR: addr,
+						Tags: []string{tag1},
+					},
+					{
+						CIDR: addr,
+						Tags: []string{tag2, tag3},
+					},
+				},
+			},
+		},
+	}
+
+	networks, err := json.Marshal(testData)
+	require.Nil(t, err)
+
+	crawler := ociNetworkCrawler{}
+	parsedResult, err := crawler.parseNetworks(networks)
+	require.Nil(t, err)
+	require.Equal(t, parsedResult.ProviderName, crawler.GetProviderKey().String())
+
+	// One regions in total
+	require.Equal(t, 1, len(parsedResult.RegionNetworks))
+	regionNameToDetail := testutils.GetRegionNameToDetails(parsedResult)
+
+	// Check region content
+	{
+		regionNetworks, ok := regionNameToDetail[regionName]
+		require.True(t, ok)
+		// Two services in total for region1 (tag1, tag2-tag3)
+		require.Equal(t, 2, len(regionNetworks.ServiceNetworks))
+
+		serviceToIPs := testutils.GetServiceNameToIPs(regionNetworks)
+		// service1
+		service := toServiceName([]string{tag1})
+		testutils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			service,
+			[]string{addr},
+			[]string{})
+
+		// service2
+		service = toServiceName([]string{tag2, tag3})
+		testutils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			service,
+			[]string{addr},
 			[]string{})
 	}
 }

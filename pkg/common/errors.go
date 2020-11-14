@@ -74,3 +74,13 @@ func ErroneousPrefixOrderingError(bucketName string, prefixes []string) error {
 func NoBucketNameSpecified() error {
 	return errors.New("bucket name not specified")
 }
+
+// RegionNetworksNotFound is returned when a region networks spec is not found
+func RegionNetworksNotFound(region string) error {
+	return fmt.Errorf("region networks for region %s not found", region)
+}
+
+// ServiceNetworksNotFound is returned when a service networks spec is not found
+func ServiceNetworksNotFound(service string) error {
+	return fmt.Errorf("service networks for service %s not found", service)
+}
