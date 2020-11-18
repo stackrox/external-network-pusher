@@ -96,6 +96,10 @@ func (c *ociNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 
 func toServiceName(tags []string) string {
 	sort.Strings(tags)
+	// Using "|" as deliminator since these are tags and tag1|tag2 as a service name
+	// seems the best way to represent them, instead of "/" since this could potentially
+	// be understood in a way that the tags have some sort of hierarchical relationships
+	// between them.
 	return utils.ToCompoundName("|", tags...)
 }
 

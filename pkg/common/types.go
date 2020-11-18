@@ -129,7 +129,7 @@ func (p *ProviderNetworkRanges) AddIPPrefix(region, service, ipPrefix string, fn
 				return err
 			}
 			if redundantPair != nil {
-				if newPair.Equals(redundantPair) {
+				if redundantPair == &newPair {
 					// The new pair is redundant. Not adding it
 					return nil
 				}
@@ -142,7 +142,7 @@ func (p *ProviderNetworkRanges) AddIPPrefix(region, service, ipPrefix string, fn
 		}
 	}
 
-	if existingPairs, ok := p.prefixToRegionServiceNames[ipPrefix]; Verbose() && ok && len(existingPairs) > 0 {
+	if existingPairs := p.prefixToRegionServiceNames[ipPrefix]; Verbose() && len(existingPairs) > 0 {
 		strs := make([]string, 0, len(existingPairs))
 		for _, pair := range existingPairs {
 			strs = append(strs, pair.String())

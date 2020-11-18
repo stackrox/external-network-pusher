@@ -9,7 +9,7 @@ func Verbose() bool {
 	return verbose
 }
 
-// SetVerbose sets verbose option
+// SetVerbose enables verbose mode
 func SetVerbose() {
 	verbose = true
 }
