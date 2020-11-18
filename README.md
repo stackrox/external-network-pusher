@@ -43,8 +43,9 @@ After building the binary, just do
 ```bash
 .gobin/network-crawler --bucket-name <GCS bucket name>
 ```
+where bucket name is the name of the GCS bucket you want to upload to. It is a required field.
 
-By default it would crawl all the providers listed above, alternatively you can specify specifc set of providers to crawl. For example, if you want to skip crawling for Google Cloud and Amazon AWS, do
+By default it would crawl all the providers listed above, alternatively you can crawl specific set of providers by specifying providers to skip. For example, if you want to skip crawling for Google Cloud and Amazon AWS, do
 ```bash
 .gobin/network-crawler --bucket-name <GCS bucket name> --skipped-providers Google,Amazon
 ```
