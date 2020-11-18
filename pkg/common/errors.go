@@ -58,3 +58,14 @@ func NotEnoughIPPrefixesError(providerName string, numObserved, numRequired int)
 		numObserved,
 		numRequired)
 }
+
+// ErroneousPrefixOrderingError is returned when crawler detects the prefixes in bucket are erroneous
+func ErroneousPrefixOrderingError(bucketName string, prefixes []string) error {
+	return fmt.Errorf(
+		"erroneous prefixes ordering found. Folders with timestamp names (i.e. numbers) should come"+
+			"before the latest folder (i.e. %s). However, we found %d folders with erroneous ordering: %v."+
+			"Manual inspection is required",
+		LatestFolderName,
+		len(prefixes),
+		prefixes)
+}
