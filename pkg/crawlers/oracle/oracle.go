@@ -75,12 +75,13 @@ func (c *ociNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 		return nil, errors.Wrap(err, "failed to unmarshal Oracle's network data")
 	}
 
-	providerNetworks := common.ProviderNetworkRanges{ProviderName: c.GetProviderKey().String()}
+	providerNetworks := common.NewProviderNetworkRanges(c.GetProviderKey().String())
 	for _, regionNetworks := range ociNetworkSpec.Regions {
 		for _, cidrDef := range regionNetworks.CIDRs {
 			// sort the tags before creating service name to make service name consistent
 			service := toServiceName(cidrDef.Tags)
-			err := providerNetworks.AddIPPrefix(regionNetworks.Region, service, cidrDef.CIDR)
+			err :=
+				providerNetworks.AddIPPrefix(regionNetworks.Region, service, cidrDef.CIDR, c.getComputeRedundancyFn())
 			if err != nil {
 				return nil, errors.Wrapf(
 					err,
@@ -90,10 +91,18 @@ func (c *ociNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkR
 		}
 	}
 
-	return &providerNetworks, nil
+	return providerNetworks, nil
 }
 
 func toServiceName(tags []string) string {
 	sort.Strings(tags)
-	return utils.ToCompoundName(tags...)
+	// Using "|" as deliminator since these are tags and tag1|tag2 as a service name
+	// seems the best way to represent them, instead of "/" since this could potentially
+	// be understood in a way that the tags have some sort of hierarchical relationships
+	// between them.
+	return utils.ToCompoundName("|", tags...)
+}
+
+func (c *ociNetworkCrawler) getComputeRedundancyFn() common.IsRedundantRegionServicePairFn {
+	return common.GetDefaultRegionServicePairRedundancyCheck()
 }

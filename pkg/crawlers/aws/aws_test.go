@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stackrox/external-network-pusher/pkg/common/utils"
+	"github.com/stackrox/external-network-pusher/pkg/common/testutils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,25 +15,25 @@ func TestAWSParseNetworks(t *testing.T) {
 	service1, service2, service3 := "service1", "service2", "service3"
 
 	testData := awsNetworkSpec{
-		SyncToken:  utils.UnusedString,
-		CreateDate: utils.UnusedString,
+		SyncToken:  testutils.UnusedString,
+		CreateDate: testutils.UnusedString,
 		Prefixes: []awsIPv4Spec{
 			{
 				IPPrefix:           ipv41,
 				Region:             region1,
-				NetworkBorderGroup: utils.UnusedString,
+				NetworkBorderGroup: testutils.UnusedString,
 				Service:            service1,
 			},
 			{
 				IPPrefix:           ipv42,
 				Region:             region1,
-				NetworkBorderGroup: utils.UnusedString,
+				NetworkBorderGroup: testutils.UnusedString,
 				Service:            service2,
 			},
 			{
 				IPPrefix:           ipv43,
 				Region:             region2,
-				NetworkBorderGroup: utils.UnusedString,
+				NetworkBorderGroup: testutils.UnusedString,
 				Service:            service1,
 			},
 		},
@@ -41,19 +41,19 @@ func TestAWSParseNetworks(t *testing.T) {
 			{
 				IPv6Prefix:         ipv61,
 				Region:             region1,
-				NetworkBorderGroup: utils.UnusedString,
+				NetworkBorderGroup: testutils.UnusedString,
 				Service:            service1,
 			},
 			{
 				IPv6Prefix:         ipv62,
 				Region:             region2,
-				NetworkBorderGroup: utils.UnusedString,
+				NetworkBorderGroup: testutils.UnusedString,
 				Service:            service2,
 			},
 			{
 				IPv6Prefix:         ipv63,
 				Region:             region3,
-				NetworkBorderGroup: utils.UnusedString,
+				NetworkBorderGroup: testutils.UnusedString,
 				Service:            service3,
 			},
 		},
@@ -69,7 +69,7 @@ func TestAWSParseNetworks(t *testing.T) {
 
 	// Three (region1, 2, 3) regions in total
 	require.Equal(t, 3, len(parsedResult.RegionNetworks))
-	regionNameToDetail := utils.GetRegionNameToDetails(parsedResult)
+	regionNameToDetail := testutils.GetRegionNameToDetails(parsedResult)
 
 	// region1
 	{
@@ -78,9 +78,9 @@ func TestAWSParseNetworks(t *testing.T) {
 		// Two services in total for region1
 		require.Equal(t, 2, len(regionNetworks.ServiceNetworks))
 
-		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
+		serviceToIPs := testutils.GetServiceNameToIPs(regionNetworks)
 		// service1
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service1,
@@ -88,7 +88,7 @@ func TestAWSParseNetworks(t *testing.T) {
 			[]string{ipv61})
 
 		// service2
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service2,
@@ -102,9 +102,9 @@ func TestAWSParseNetworks(t *testing.T) {
 		// Two services in total for region2
 		require.Equal(t, 2, len(regionNetworks.ServiceNetworks))
 
-		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
+		serviceToIPs := testutils.GetServiceNameToIPs(regionNetworks)
 		// service1
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service1,
@@ -112,7 +112,7 @@ func TestAWSParseNetworks(t *testing.T) {
 			[]string{})
 
 		// service2
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service2,
@@ -126,13 +126,83 @@ func TestAWSParseNetworks(t *testing.T) {
 		// Only one service in region3
 		require.Equal(t, 1, len(regionNetworks.ServiceNetworks))
 
-		serviceToIPs := utils.GetServiceNameToIPs(regionNetworks)
+		serviceToIPs := testutils.GetServiceNameToIPs(regionNetworks)
 		// service3
-		utils.CheckServiceIPsInRegion(
+		testutils.CheckServiceIPsInRegion(
 			t,
 			serviceToIPs,
 			service3,
 			[]string{},
 			[]string{ipv63})
+	}
+}
+
+func TestAWSRegionServiceRedundancyCheck(t *testing.T) {
+	addr := "3.5.140.0/22"
+	regionName := "testRegion"
+	serviceName1, serviceName2 := "testService1", "testService2"
+
+	testData := awsNetworkSpec{
+		SyncToken:  testutils.UnusedString,
+		CreateDate: testutils.UnusedString,
+		Prefixes: []awsIPv4Spec{
+			{
+				IPPrefix:           addr,
+				Region:             regionName,
+				NetworkBorderGroup: testutils.UnusedString,
+				Service:            serviceName1,
+			},
+			{
+				IPPrefix:           addr,
+				Region:             regionName,
+				NetworkBorderGroup: testutils.UnusedString,
+				Service:            serviceName1,
+			},
+			{
+				IPPrefix:           addr,
+				Region:             regionName,
+				NetworkBorderGroup: testutils.UnusedString,
+				Service:            serviceName2,
+			},
+		},
+		IPv6Prefixes: []awsIPv6Spec{},
+	}
+
+	networks, err := json.Marshal(testData)
+	require.Nil(t, err)
+
+	crawler := awsNetworkCrawler{}
+	parsedResult, err := crawler.parseNetworks(networks)
+	require.Nil(t, err)
+	require.Equal(t, parsedResult.ProviderName, crawler.GetProviderKey().String())
+
+	// One region in total
+	require.Equal(t, 1, len(parsedResult.RegionNetworks))
+	regionNameToDetail := testutils.GetRegionNameToDetails(parsedResult)
+
+	// testRegion
+	{
+		// Although in test data we have three entries, only two should be left
+		regionNetworks, ok := regionNameToDetail[regionName]
+		require.True(t, ok)
+		// Two services in total for region1
+		require.Equal(t, 2, len(regionNetworks.ServiceNetworks))
+
+		serviceToIPs := testutils.GetServiceNameToIPs(regionNetworks)
+		// service1
+		testutils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			serviceName1,
+			[]string{addr},
+			[]string{})
+
+		// service2
+		testutils.CheckServiceIPsInRegion(
+			t,
+			serviceToIPs,
+			serviceName2,
+			[]string{addr},
+			[]string{})
 	}
 }

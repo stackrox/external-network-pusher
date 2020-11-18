@@ -62,14 +62,22 @@ func run() error {
 		flagBucketName       = flag.String("bucket-name", "", "GCS bucket name to upload external networks to")
 		flagDryRun           = flag.Bool("dry-run", false, "Skip uploading external networks to GCS")
 		flagSkippedProviders skippedProviderFlag
+		flagVerbose          bool
+		flagVerboseUsage     = "Prints extra debug message"
 	)
 	skippedProvidersUsage :=
 		fmt.Sprintf("Comma separated list of providers. Currently acceptable providers are: %v", common.AllProviders())
 	flag.Var(&flagSkippedProviders, "skipped-providers", skippedProvidersUsage)
+	flag.BoolVar(&flagVerbose, "verbose", flagVerbose, flagVerboseUsage)
+	flag.BoolVar(&flagVerbose, "v", flagVerbose, flagVerboseUsage+" (shorthand)")
 	flag.Parse()
 
 	if flagBucketName == nil || *flagBucketName == "" {
 		return common.NoBucketNameSpecified()
+	}
+
+	if flagVerbose {
+		common.SetVerbose()
 	}
 
 	if *flagDryRun {
