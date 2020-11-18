@@ -15,6 +15,7 @@ ifeq ($(UNAME_S),Darwin)
     HOST_OS := darwin
 endif
 
+TAG := $(shell ./get-tag)
 
 GOBIN := $(CURDIR)/.gobin
 PATH := $(GOBIN):$(PATH)
@@ -39,7 +40,7 @@ $(STATICCHECK_BIN): deps
 	@go install honnef.co/go/tools/cmd/staticcheck
 
 ###########
-## Lint ##
+## Lint  ##
 ###########
 
 .PHONY: golangci-lint
@@ -69,3 +70,34 @@ lint: golangci-lint staticcheck
 test: 
 	go test ./...
 
+
+###########
+## Build ##
+###########
+
+.PHONY: tag
+tag:
+	@echo $(TAG)
+
+.PHONY: build
+build:
+	@echo "+ $@"
+	@mkdir -p "$(GOBIN)"
+	@CGO_ENABLED=0 GOOS=linux \
+	go build -a -ldflags "-s -w" \
+		-o $(GOBIN)/linux/network-crawler ./cmd/network-crawler
+	@CGO_ENABLED=0 GOOS=darwin \
+	go build -a -ldflags "-s -w" \
+		-o $(GOBIN)/darwin/network-crawler ./cmd/network-crawler
+	@cp $(GOBIN)/$(HOST_OS)/network-crawler $(GOBIN)/network-crawler
+
+.PHONY: image
+image: build
+	@echo "+ $@"
+	@cp $(GOBIN)/linux/network-crawler ./image
+	@docker build -t us.gcr.io/stackrox-hub/network-crawler:$(TAG) image
+
+.PHONY: push
+push: image
+	@echo "+ $@"
+	@docker push us.gcr.io/stackrox-hub/network-crawler:$(TAG) | cat

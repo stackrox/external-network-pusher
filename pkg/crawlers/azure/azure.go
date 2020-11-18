@@ -167,7 +167,7 @@ func (c *azureNetworkCrawler) redirectToJSONURL(rawURL string) (string, error) {
 			// Trim trailing newline char
 			"tr -d '\n'",
 		rawURL)
-	out, err := exec.Command("bash", "-c", cmd).Output()
+	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
 	if err != nil {
 		errors.Wrapf(err, "failed to redirect to JSON URL while trying to crawl Azure with URL: %s", rawURL)
 		return "", err

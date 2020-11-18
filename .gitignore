@@ -1,5 +1,11 @@
 # Setting files of JetBrains IDE
-.idea
+/.idea
 
 # Empty file touched by `make deps`
 /deps
+
+# Project specifc $GOBIN
+/.gobin
+
+# Binary
+/image/network-crawler
