@@ -54,3 +54,14 @@ workflows:
           context: 
             - gcr-io-stackrox-hub-push
             - docker-io-pull
+  release:
+    jobs:
+      - publish:
+          context: 
+            - gcr-io-stackrox-hub-push
+            - docker-io-pull
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
