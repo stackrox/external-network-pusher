@@ -2,7 +2,10 @@ version: 2.1
 
 defaults: &defaults
   docker:
-    - image: cimg/go:1.15
+    - image: docker.io/stackrox/apollo-ci:0.3.5
+      auth:
+        username: $DOCKER_IO_PULL_USERNAME
+        password: $DOCKER_IO_PULL_PASSWORD
   working_directory: /home/circleci/go/src/github.com/stackrox/external-network-pusher
 
 jobs:
@@ -24,6 +27,21 @@ jobs:
         name: Run unit tests
         command: |
           make test
+  
+  publish:
+    <<: *defaults
+    steps:
+    - run:
+        name: Login to gcr.io
+        command: |
+          gcloud auth activate-service-account --key-file <(echo "$PUSH_TO_GCR_STACKROX_HUB")
+          gcloud auth list
+          gcloud --quiet auth configure-docker
+    - setup_remote_docker
+    - checkout
+    - run:
+        name: Build and push image
+        command: make push
 
 workflows:
   build:
@@ -32,3 +50,7 @@ workflows:
           context: docker-io-pull
       - test:
           context: docker-io-pull
+      - publish:
+          context: 
+            - gcr-io-stackrox-hub-push
+            - docker-io-pull
