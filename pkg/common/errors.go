@@ -59,15 +59,9 @@ func NotEnoughIPPrefixesError(providerName string, numObserved, numRequired int)
 		numRequired)
 }
 
-// ErroneousPrefixOrderingError is returned when crawler detects the prefixes in bucket are erroneous
-func ErroneousPrefixOrderingError(prefixes []string) error {
-	return fmt.Errorf(
-		"erroneous prefixes ordering found. Folders with timestamp names should come"+
-			"before the latest metadata file (i.e. %s). However, we found %d folders with erroneous ordering: %v."+
-			"Manual inspection is required",
-		LatestMetadataFileName,
-		len(prefixes),
-		prefixes)
+// LatestMetadataFileNotFound is returned when there is no latest metadata file on the bucket
+func LatestMetadataFileNotFound(bucketName string) error {
+	return fmt.Errorf("no %s file is found in bucket: %s", LatestMetadataFileName, bucketName)
 }
 
 // NoBucketNameSpecified is returned when the script is invoked without a bucket name

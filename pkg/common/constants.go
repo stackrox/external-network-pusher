@@ -30,7 +30,7 @@ const MasterBucketPrefix = "external-networks"
 // MaxNumDefinitions is the maximum number of runs(outputted network definitions)
 // we remember in the bucket specified in script.
 // Oldest record should be deleted first.
-const MaxNumDefinitions = 10
+const MaxNumDefinitions = 3
 
 // Provider is a string representing different external network providers
 type Provider string

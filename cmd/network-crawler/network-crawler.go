@@ -321,6 +321,20 @@ func truncateOutdatedExternalNetworksDefnitions(bucketName string, isDryRun bool
 	if err != nil {
 		return errors.Wrapf(err, "failed getting all prefixes under bucket %s", bucketName)
 	}
+	// We should not by any chance delete the latest metadata file. Guard against that
+	latestMetadataPrefix := getLatestMetadataPrefix()
+	latestMetadataIndex := -1
+	for i, prefix := range prefixes {
+		if prefix == latestMetadataPrefix {
+			latestMetadataIndex = i
+			break
+		}
+	}
+	if latestMetadataIndex == -1 {
+		return common.LatestMetadataFileNotFound(bucketName)
+	}
+	prefixes = utils.StrSliceRemove(prefixes, latestMetadataIndex)
+
 	if len(prefixes) <= common.MaxNumDefinitions {
 		// Less than the max number of records we keep in the bucket. Return
 		return nil
@@ -331,14 +345,6 @@ func truncateOutdatedExternalNetworksDefnitions(bucketName string, isDryRun bool
 	// Sort and get the oldest(smallest) date
 	sort.Strings(prefixes)
 	prefixesToDelete := prefixes[:len(prefixes)-common.MaxNumDefinitions]
-
-	// We should not by any chance delete the latest record. Guard against that
-	latestMetadataPrefix := getLatestMetadataPrefix()
-	for _, prefix := range prefixesToDelete {
-		if prefix == latestMetadataPrefix {
-			return common.ErroneousPrefixOrderingError(prefixes)
-		}
-	}
 
 	// After verifications, proceed to delete needed records
 	log.Print(
