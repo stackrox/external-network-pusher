@@ -55,18 +55,18 @@ Please see `--help` for full list of options.
 ### Output structure
 This script uploads to the user specified bucket in the following manner. Under the bucket, you should see:
 
-external-networks/latest/networks
+external-networks/latest_metadata
+- File which contains metadata of the latest networks. All consumers of the crawled network data should only look at this file for the filename which contains the latest networks.
+
+external-networks/\<timestamp\>_\<dynamic_uuid\>/networks
 - Main file that contains all the provider networks.
 
-external-networks/latest/checksum
-- Contains the checksum for the above networks file
+external-networks/\<timestamp\>_\<dynamic_uuid\>/checksum
+- Contains the checksum for the above networks file. `latest_metadata` file also contains this info for the latest network data.
 
-external-networks/latest/timestamp
-- Contains the timestamp of when the scripts was triggered.
+Later runs will not overwrite the previous run outputs. Instead, it will upload a new version of the network data, and change the content of the `latest_metadata` file.
 
-Later runs will not overwrite the previous run outputs. Instead, it will change the prefix from `external-networks/latest` to `external-networks/<timestamp>` where timestamp is the timestamp file value of that run. Then the scripts uploads new version of the `external-networks/latest` files.
-
-However, as of now the scripts only keeps 10 run records in the bucket. If the script detected that there are more than 10 records, it starts deleting from the oldest one by timestamp.
+As of now the script only keeps 10 run records in the bucket. If the script detected that there are more than 10 records, it starts deleting from the oldest one according to timestamp.
 
 ### URL endpoints
 URL endpoints used by this crawler is defined in `pkg/common/constants.go`. Please check file for the URLs.

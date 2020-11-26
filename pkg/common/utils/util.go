@@ -1,9 +1,14 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"strings"
+
+	"github.com/google/uuid"
 )
+
+const uniquifyDelim = ":::"
 
 // ToCompoundName accepts list of tags and returns a compound name.
 // It ignores any empty tag (i.e.: empty string)
@@ -43,4 +48,28 @@ func StrSliceRemove(in []string, i int) []string {
 	}
 	in[i] = in[len(in)-1]
 	return in[:len(in)-1]
+}
+
+// Uniquify uniquifies a string by attaching a UUID to it
+func Uniquify(name string) (string, error) {
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{name, id.String()}, uniquifyDelim), nil
+}
+
+// NameFromUniquified extracts the original name from the uniquified string
+func NameFromUniquified(uniquified string) (string, error) {
+	splitted := strings.Split(uniquified, uniquifyDelim)
+	if len(splitted) != 2 {
+		return "", fmt.Errorf("invalid uniquified string: %s", uniquified)
+	}
+	// Make sure that the second str of splitted is a UUID
+	_, err := uuid.Parse(splitted[1])
+	if err != nil {
+		return "", err
+	}
+
+	return splitted[0], nil
 }

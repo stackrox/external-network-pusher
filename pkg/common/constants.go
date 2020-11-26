@@ -19,13 +19,9 @@ const NetworkFileName = "networks"
 // network ranges file
 const ChecksumFileName = "checksum"
 
-// TimestampFileName is the name which contains the timestamp of the
-// network ranges files
-const TimestampFileName = "timestamp"
-
-// LatestFolderName is the name of the file which contains the
-// folder name of the latest crawler output
-const LatestFolderName = "latest"
+// LatestMetadataFileName is the name of the file that contains all the
+// metadata info about the latest networks data.
+const LatestMetadataFileName = "latest_metadata"
 
 // MasterBucketPrefix is the top level prefix we use for all the uploads we do
 // in this crawler
