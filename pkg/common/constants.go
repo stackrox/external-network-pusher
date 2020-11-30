@@ -32,7 +32,6 @@ const MasterBucketPrefix = "external-networks"
 // Oldest record should be deleted first.
 const MaxNumDefinitions = 10
 
-
 // Provider is a string representing different external network providers
 type Provider string
 
