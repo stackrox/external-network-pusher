@@ -298,12 +298,7 @@ func getCurrentTimestamp() string {
 }
 
 func truncateOutdatedExternalNetworksDefnitions(bucketName string, isDryRun bool) error {
-	if isDryRun {
-		log.Print("Dry run specified. Skipping to truncate any network definitions.")
-		return nil
-	}
-
-	prefixes, err := utils.GetAllPrefixesUnderBucket(bucketName)
+	prefixes, err := utils.GetAllPrefixesUnderBucketWithPrefix(bucketName, common.MasterBucketPrefix)
 	if err != nil {
 		return errors.Wrapf(err, "failed getting all prefixes under bucket %s", bucketName)
 	}
@@ -335,6 +330,12 @@ func truncateOutdatedExternalNetworksDefnitions(bucketName string, isDryRun bool
 	// After verifications, proceed to delete needed records
 	log.Print(
 		color.RedString("Deleting objects with folder names: %s", strings.Join(prefixesToDelete, ",")))
+	if isDryRun {
+		log.Print("Dry run specified. Skipping to truncate any network definitions.")
+		return nil
+	}
+
+	// Not dry run, delete objects
 	for _, prefix := range prefixesToDelete {
 		err = utils.DeleteObjectWithPrefix(bucketName, prefix)
 		if err != nil {

@@ -153,10 +153,10 @@ func Copy(srcBucketName, srcObjectName, dstBucketName, dstObjectName string) err
 	return nil
 }
 
-// GetAllPrefixesUnderBucket returns all the prefixes (sub-folders at the bottom most layer) within
+// GetAllPrefixesUnderBucketWithPrefix returns all the prefixes (sub-folders at the bottom most layer) within
 // the specified bucket.
-func GetAllPrefixesUnderBucket(bucketName string) ([]string, error) {
-	objectNames, err := GetAllObjectNamesWithPrefix(bucketName, "")
+func GetAllPrefixesUnderBucketWithPrefix(bucketName, prefix string) ([]string, error) {
+	objectNames, err := GetAllObjectNamesWithPrefix(bucketName, prefix)
 	if err != nil {
 		return nil, err
 	}
