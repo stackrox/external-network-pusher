@@ -53,13 +53,6 @@ type ExternalNetworkSources struct {
 	ProviderNetworks []*ProviderNetworkRanges `json:"providerNetworks"`
 }
 
-// LatestMetadata holds all the metadata info about the latest network data
-type LatestMetadata struct {
-	NetworkFile  string `json:"network_file"`
-	ChecksumFile string `json:"checksum_fie"`
-	Timestamp    string `json:"timestamp"`
-}
-
 // RegionServicePair is a tuple of region and service names
 type RegionServicePair struct {
 	Region  string

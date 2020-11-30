@@ -122,7 +122,7 @@ func publishExternalNetworks(
 		return err
 	}
 	networkFilesPrefix := getObjectPrefix(uniquifiedTimestamp)
-	latestMetadataPrefix := getLatestMetadataPrefix()
+	latestPrefixFilePrefix := getLatestPrefixFilePrefix()
 
 	var allExternalNetworks common.ExternalNetworkSources
 	for _, crawler := range crawlerImpls {
@@ -150,7 +150,7 @@ func publishExternalNetworks(
 		isDryRun,
 		bucketName,
 		networkFilesPrefix,
-		latestMetadataPrefix,
+		latestPrefixFilePrefix,
 		timestamp)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload data to bucket")
@@ -213,16 +213,12 @@ func validateExternalNetworks(crawlers []common.NetworkCrawler, networks *common
 func uploadExternalNetworkSources(
 	networks *common.ExternalNetworkSources,
 	isDryRun bool,
-	bucketName, networkFilesPrefix, latestMetadataPrefix, timestamp string,
+	bucketName, networkFilesPrefix, latestPrefixFilePrefix, timestamp string,
 ) error {
 	log.Printf("Uploading crawled networks...")
 	data, cksum, err := marshalAndGetCksum(networks)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal external networks")
-	}
-	latestMetadata, err := getAndMarshalLatestMetadata(networkFilesPrefix, timestamp)
-	if err != nil {
-		return errors.Wrap(err, "failed to get latest metadata for networks")
 	}
 
 	if !isDryRun {
@@ -237,7 +233,11 @@ func uploadExternalNetworkSources(
 		}
 
 		// Upload latest metadata
-		err = uploadObjectWithPrefix(bucketName, latestMetadataPrefix, common.LatestMetadataFileName, latestMetadata)
+		err = uploadObjectWithPrefix(
+			bucketName,
+			latestPrefixFilePrefix,
+			common.LatestPrefixFileName,
+			[]byte(networkFilesPrefix))
 		if err != nil {
 			return errors.Wrap(err, "failed to upload latest metadata")
 		}
@@ -283,21 +283,7 @@ func marshalAndGetCksum(v interface{}) ([]byte, string, error) {
 	return data, checksum, nil
 }
 
-func getAndMarshalLatestMetadata(networkFilesPrefix, timestamp string) ([]byte, error) {
-	s := common.LatestMetadata{
-		NetworkFile:  filepath.Join(networkFilesPrefix, common.NetworkFileName),
-		ChecksumFile: filepath.Join(networkFilesPrefix, common.ChecksumFileName),
-		Timestamp:    timestamp,
-	}
-	data, err := json.Marshal(&s)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func getLatestMetadataPrefix() string {
+func getLatestPrefixFilePrefix() string {
 	return getObjectPrefix("")
 }
 
@@ -322,18 +308,18 @@ func truncateOutdatedExternalNetworksDefnitions(bucketName string, isDryRun bool
 		return errors.Wrapf(err, "failed getting all prefixes under bucket %s", bucketName)
 	}
 	// We should not by any chance delete the latest metadata file. Guard against that
-	latestMetadataPrefix := getLatestMetadataPrefix()
-	latestMetadataIndex := -1
+	latestPrefixFilePrefix := getLatestPrefixFilePrefix()
+	latestPrefixIndex := -1
 	for i, prefix := range prefixes {
-		if prefix == latestMetadataPrefix {
-			latestMetadataIndex = i
+		if prefix == latestPrefixFilePrefix {
+			latestPrefixIndex = i
 			break
 		}
 	}
-	if latestMetadataIndex == -1 {
-		return common.LatestMetadataFileNotFound(bucketName)
+	if latestPrefixIndex == -1 {
+		return common.LatestPrefixFileNotFound(bucketName)
 	}
-	prefixes = utils.StrSliceRemove(prefixes, latestMetadataIndex)
+	prefixes = utils.StrSliceRemove(prefixes, latestPrefixIndex)
 
 	if len(prefixes) <= common.MaxNumDefinitions {
 		// Less than the max number of records we keep in the bucket. Return

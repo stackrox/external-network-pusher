@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const uniquifyDelim = ":::"
+const uniquifyDelim = "__"
 
 // ToCompoundName accepts list of tags and returns a compound name.
 // It ignores any empty tag (i.e.: empty string)
@@ -52,6 +52,10 @@ func StrSliceRemove(in []string, i int) []string {
 
 // Uniquify uniquifies a string by attaching a UUID to it
 func Uniquify(name string) (string, error) {
+	if strings.Contains(name, uniquifyDelim) {
+		return "", fmt.Errorf("name %s contains reserved delim: \"%s\"", name, uniquifyDelim)
+	}
+
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return "", err

@@ -19,9 +19,9 @@ const NetworkFileName = "networks"
 // network ranges file
 const ChecksumFileName = "checksum"
 
-// LatestMetadataFileName is the name of the file that contains all the
-// metadata info about the latest networks data.
-const LatestMetadataFileName = "latest_metadata"
+// LatestPrefixFileName is the name of the file that contains the prefix
+// of latest networks definitions.
+const LatestPrefixFileName = "latest_prefix"
 
 // MasterBucketPrefix is the top level prefix we use for all the uploads we do
 // in this crawler
@@ -30,7 +30,8 @@ const MasterBucketPrefix = "external-networks"
 // MaxNumDefinitions is the maximum number of runs(outputted network definitions)
 // we remember in the bucket specified in script.
 // Oldest record should be deleted first.
-const MaxNumDefinitions = 3
+const MaxNumDefinitions = 10
+
 
 // Provider is a string representing different external network providers
 type Provider string

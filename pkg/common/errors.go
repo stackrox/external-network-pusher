@@ -59,9 +59,9 @@ func NotEnoughIPPrefixesError(providerName string, numObserved, numRequired int)
 		numRequired)
 }
 
-// LatestMetadataFileNotFound is returned when there is no latest metadata file on the bucket
-func LatestMetadataFileNotFound(bucketName string) error {
-	return fmt.Errorf("no %s file is found in bucket: %s", LatestMetadataFileName, bucketName)
+// LatestPrefixFileNotFound is returned when there is no latest metadata file on the bucket
+func LatestPrefixFileNotFound(bucketName string) error {
+	return fmt.Errorf("no %s file is found in bucket: %s", LatestPrefixFileName, bucketName)
 }
 
 // NoBucketNameSpecified is returned when the script is invoked without a bucket name
