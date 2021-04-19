@@ -54,6 +54,25 @@ workflows:
           context: 
             - gcr-io-stackrox-hub-push
             - docker-io-pull
+
+  update-dumps-daily:
+    triggers:
+      - schedule:
+          cron: "0 18 * * *"
+          filters:
+            branches:
+              only: master
+
+    jobs:
+      - lint:
+          context: docker-io-pull
+      - test:
+          context: docker-io-pull
+      - publish:
+          context: 
+            - gcr-io-stackrox-hub-push
+            - docker-io-pull
+
   release:
     jobs:
       - publish:
