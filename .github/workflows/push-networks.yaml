@@ -1,0 +1,66 @@
+name: Build external-network-pusher
+
+on:
+  schedule:
+    - cron: 30 19 * * * # Run this every day at 19:30 UTC
+  workflow_dispatch:
+
+
+jobs:
+  build-and-upload:
+    name: Build external-network-pusher
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Read Go version from go.mod
+        run: echo "GO_VERSION=$(grep -E "^go\s+[0-9.]+$" go.mod | cut -d " " -f 2)" >> $GITHUB_ENV
+      - name: Setup Go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+
+      - name: Go Mod Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Build binaries
+        run: make build
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin
+          path: .gobin
+
+
+  run-and-upload:
+    runs-on: ubuntu-latest
+    needs: build-and-upload
+    name: Run external-network-pusher and upload results
+    steps:
+
+      - name: Download executable
+        uses: actions/download-artifact@v3
+        with:
+          name: bin
+
+      - name: Set permissions to file
+        run:  chmod +x linux/network-crawler
+      
+      - name: Run external-network-pusher
+        run:  linux/network-crawler --dry-run --bucket-name 123
+        continue-on-error: false
+
+
