@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.70.0 // indirect
 	cloud.google.com/go/storage v1.12.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/fatih/color v1.10.0
+	github.com/fatih/color v1.15.0
 	github.com/google/martian/v3 v3.1.0 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/kr/text v0.2.0 // indirect
@@ -14,7 +14,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0 // indirect
-	golang.org/x/sys v0.0.0-20201018230417-eeed37f84f13 // indirect
 	golang.org/x/tools v0.0.0-20201019175715-b894a3290fff // indirect
 	google.golang.org/api v0.33.0
 	google.golang.org/appengine v1.6.7 // indirect
