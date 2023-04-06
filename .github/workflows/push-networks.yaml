@@ -3,6 +3,7 @@ name: Build external-network-pusher
 on:
   schedule:
     - cron: 30 19 * * * # Run this every day at 19:30 UTC
+  workflow_dispatch:
 
 
 jobs:
