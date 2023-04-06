@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/storage v1.12.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.10.0
-	github.com/golangci/golangci-lint v1.33.0 // indirect
 	github.com/google/martian/v3 v3.1.0 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/kr/text v0.2.0 // indirect
@@ -19,7 +18,7 @@ require (
 	golang.org/x/tools v0.0.0-20201019175715-b894a3290fff // indirect
 	google.golang.org/api v0.33.0
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.33.0 // indirect
+	google.golang.org/grpc v1.33.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
