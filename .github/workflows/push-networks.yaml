@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: 'google-github-actions/auth@v1'
         with:
-          credentials_json: '${{ secrets.GCP_RELEASE_AUTOMATION_SA }}'
+          credentials_json: '${{ secrets.GCP_NETWORKS_UPLOADER_SA }}'
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v0'
         with:
