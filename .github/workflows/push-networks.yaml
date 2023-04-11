@@ -55,7 +55,7 @@ jobs:
           name: bin
           path: .gobin
 
-  run-dry-run:
+  run-dry-run: # Dry run will run on PRs by default
     runs-on: ubuntu-latest
     needs: build
     name: Dry-run external-network-pusher and simulate results
@@ -76,7 +76,7 @@ jobs:
       - name: Set permissions to file
         run:  chmod +x linux/network-crawler
       
-      - name: Run external-network-pusher
+      - name: Dry run external-network-pusher
         run:  linux/network-crawler --dry-run --bucket-name definitions.stackrox.io
         continue-on-error: false
 
