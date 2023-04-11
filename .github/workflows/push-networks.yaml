@@ -81,7 +81,7 @@ jobs:
         continue-on-error: false
 
   run-and-upload:
-    if: github.event.inputs.dry-run != 'true' || github.event_name == 'schedule' # Can only be triggered by scheduled run or manual action with dry-run set to false
+    if:  github.event_name == 'schedule' || (github.event.inputs.dry-run == 'false' && github.event_name == 'workflow_dispatch') # Can only be triggered by scheduled run or manual action with dry-run set to false
     runs-on: ubuntu-latest
     needs: build
     name: Run external-network-pusher and upload results
