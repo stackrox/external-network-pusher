@@ -22,8 +22,10 @@ jobs:
     name: Download and store currently published latest networks
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
       - name: Download and test latest networks 
-        run: /repos/${{ github.repository }}/contents/.github/workflows/scripts/download-current-networks.sh
+        run: ${GITHUB_WORKSPACE}/.github/workflows/scripts/download-current-networks.sh
         shell: bash
       
       - uses: actions/upload-artifact@v3
