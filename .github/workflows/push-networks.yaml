@@ -119,7 +119,7 @@ jobs:
 
   notify:
     name: Notify about failed run
-    # if: failure()
+    if: failure()
     needs: run-and-upload
     runs-on: ubuntu-latest
     env:
