@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download and test latest networks 
-        run: ${GITHUB_WORKSPACE}/.github/workflows/scripts/download-current-networks.sh
+        run: ./.github/workflows/scripts/download-current-networks.sh
         shell: bash
       
       - uses: actions/upload-artifact@v3
