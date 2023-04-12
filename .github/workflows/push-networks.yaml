@@ -116,3 +116,29 @@ jobs:
       
       - name: Run external-network-pusher
         run:  linux/network-crawler --dry-run --bucket-name definitions.stackrox.io  # FIXME: Remove dry-run flag here
+
+  notify:
+    name: Notify about failed run
+    if: failure()
+    needs: run-and-upload
+    runs-on: ubuntu-latest
+    env:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+    steps:
+      - name: Post to Slack channel team-acs-maple-interruptions
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: "C03SWCX9W0Z"
+          payload: >-
+            { "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":red-warning: Daily update of external networks for defintions.stackrox.io failed! :red-warning:\nRefer to the Workflow logs for more information."}},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ">
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
+            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
+            ]}
