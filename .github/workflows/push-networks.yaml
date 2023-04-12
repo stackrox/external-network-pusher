@@ -1,4 +1,4 @@
-name: Build external-network-pusher
+name: Update external networks
 
 on:
   pull_request:
