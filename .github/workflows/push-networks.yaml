@@ -20,6 +20,7 @@ on:
 jobs:
   save-current-networks:
     name: Download and store currently published latest networks
+    if:  github.event_name == 'schedule' || (github.event.inputs.dry-run == 'false' && github.event_name == 'workflow_dispatch') # Can only be triggered by scheduled run or manual action with dry-run set to false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -94,10 +95,10 @@ jobs:
         run:  linux/network-crawler --dry-run --bucket-name definitions.stackrox.io
 
   run-and-upload:
+    name: Run external-network-pusher and upload results
     if:  github.event_name == 'schedule' || (github.event.inputs.dry-run == 'false' && github.event_name == 'workflow_dispatch') # Can only be triggered by scheduled run or manual action with dry-run set to false
     runs-on: ubuntu-latest
     needs: [build, save-current-networks]
-    name: Run external-network-pusher and upload results
     steps:
       - uses: 'google-github-actions/auth@v1'
         with:
