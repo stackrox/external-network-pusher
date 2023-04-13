@@ -115,7 +115,7 @@ jobs:
         run:  chmod +x linux/network-crawler
       
       - name: Run external-network-pusher
-        run:  linux/network-crawler --dry-run --bucket-name definitions.stackrox.io  # FIXME: Remove dry-run flag here
+        run:  linux/network-crawler --bucket-name definitions.stackrox.io
 
   notify:
     name: Notify about failed run
