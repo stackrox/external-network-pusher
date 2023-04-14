@@ -275,6 +275,11 @@ func uploadExternalNetworkSources(
 	return nil
 }
 
+// writeDataToDir writes the given networks and checksum in a slightly modified format to disk for local testing.
+//
+// Difference between local and bucket files:
+// The local files have extensions indicating their format.
+// Additionally, the local checksum contains the filename of networks, so that sha256sum -c checksum.sha256 works.
 func writeDataToDir(outputDir string, networks []byte, checksum []byte) error {
 	path, err := filepath.Abs(outputDir)
 	if err != nil {
@@ -284,10 +289,11 @@ func writeDataToDir(outputDir string, networks []byte, checksum []byte) error {
 	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to create output dir")
 	}
-	if err := os.WriteFile(filepath.Join(path, "networks"), networks, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(path, "networks.json"), networks, 0644); err != nil {
 		return errors.Wrap(err, "failed to write networks")
 	}
-	if err := os.WriteFile(filepath.Join(path, "checksum"), checksum, 0644); err != nil {
+	shasumFormat := append(checksum, []byte(" networks.json")...)
+	if err := os.WriteFile(filepath.Join(path, "checksum.sha256"), shasumFormat, 0644); err != nil {
 		return errors.Wrap(err, "failed to write checksum")
 	}
 

@@ -95,11 +95,11 @@ func TestWriteDataToDir(t *testing.T) {
 	err := writeDataToDir(testpath, []byte("testnetworks"), []byte("testchecksum"))
 	assert.NoError(t, err)
 
-	netContent, err := os.ReadFile(filepath.Join(testpath, "networks"))
+	netContent, err := os.ReadFile(filepath.Join(testpath, "networks.json"))
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("testnetworks"), netContent)
 
-	cksumContent, err := os.ReadFile(filepath.Join(testpath, "checksum"))
+	cksumContent, err := os.ReadFile(filepath.Join(testpath, "checksum.sha256"))
 	assert.NoError(t, err)
-	assert.Equal(t, []byte("testchecksum"), cksumContent)
+	assert.Equal(t, []byte("testchecksum networks.json"), cksumContent)
 }
