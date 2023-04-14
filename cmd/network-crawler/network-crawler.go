@@ -263,7 +263,9 @@ func uploadExternalNetworkSources(
 			timestamp)
 	}
 
-	if outputDir != "" {
+	if outputDir == "" {
+		return nil
+	}
 		log.Printf("Output dir specified. Writing networks and checksum to %v", outputDir)
 		if err := writeDataToDir(outputDir, data, []byte(cksum)); err != nil {
 			return errors.Wrap(err, "failed to write data to directory")
