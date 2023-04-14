@@ -18,12 +18,12 @@ endif
 TAG := $(shell ./get-tag)
 
 GOBIN := $(CURDIR)/.gobin
-PATH := $(GOBIN):$(PATH)
+PATH := "$(GOBIN):$(PATH)"
 # Makefile on Mac doesn't pass this updated PATH to the shell
 # and so without the following line, the shell does not end up
 # trying commands in $(GOBIN) first.
 # See https://stackoverflow.com/a/36226784/3690207
-SHELL := env PATH=$(PATH) /bin/bash
+SHELL := /bin/bash
 
 ########################################
 ###### Binaries we depend on ###########
@@ -67,7 +67,7 @@ lint: golangci-lint staticcheck
 ##########
 
 .PHONY: test
-test: 
+test:
 	go test ./...
 
 
