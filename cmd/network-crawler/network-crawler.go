@@ -64,6 +64,7 @@ func run() error {
 		flagSkippedProviders skippedProviderFlag
 		flagVerbose          bool
 		flagVerboseUsage     = "Prints extra debug message"
+		flagOutputDir        = flag.String("output-dir", "", "If provided, write files to disk. Also works on dry-run.")
 	)
 	skippedProvidersUsage :=
 		fmt.Sprintf("Comma separated list of providers. Currently acceptable providers are: %v", common.AllProviders())
@@ -84,6 +85,10 @@ func run() error {
 		log.Print("Dry run specified. Instead of uploading the content to bucket will just print to stdout.")
 	}
 
+	if flagOutputDir == nil {
+		*flagOutputDir = ""
+	}
+
 	crawlerImpls := crawlers.Get(flagSkippedProviders)
 	if len(crawlerImpls) == 0 {
 		log.Printf("No provider to crawl.")
@@ -95,7 +100,7 @@ func run() error {
 	}
 	log.Printf("Crawling from this list of providers: %s", strings.Join(crawlingProviders, ", "))
 
-	err := publishExternalNetworks(*flagBucketName, crawlerImpls, *flagDryRun)
+	err := publishExternalNetworks(*flagBucketName, crawlerImpls, *flagDryRun, *flagOutputDir)
 	if err != nil {
 		return errors.Wrap(err, "failed publishing external network ranges")
 	}
@@ -113,6 +118,7 @@ func publishExternalNetworks(
 	bucketName string,
 	crawlerImpls []common.NetworkCrawler,
 	isDryRun bool,
+	outputDir string,
 ) error {
 	// We use the folder name as object prefix so that all the objects
 	// uploaded as part of this run appears under the same folder
@@ -151,7 +157,8 @@ func publishExternalNetworks(
 		bucketName,
 		networkFilesPrefix,
 		latestPrefixFilePrefix,
-		timestamp)
+		timestamp,
+		outputDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload data to bucket")
 	}
@@ -213,7 +220,7 @@ func validateExternalNetworks(crawlers []common.NetworkCrawler, networks *common
 func uploadExternalNetworkSources(
 	networks *common.ExternalNetworkSources,
 	isDryRun bool,
-	bucketName, networkFilesPrefix, latestPrefixFilePrefix, timestamp string,
+	bucketName, networkFilesPrefix, latestPrefixFilePrefix, timestamp string, outputDir string,
 ) error {
 	log.Printf("Uploading crawled networks...")
 	data, cksum, err := marshalAndGetCksum(networks)
@@ -254,6 +261,32 @@ func uploadExternalNetworkSources(
 			networkFilesPrefix,
 			cksum,
 			timestamp)
+	}
+
+	if outputDir != "" {
+		log.Printf("Output dir specified. Writing networks and checksum to %v", outputDir)
+		if err := writeDataToDir(outputDir, data, []byte(cksum)); err != nil {
+			return errors.Wrap(err, "failed to write data to directory")
+		}
+
+	}
+	return nil
+}
+
+func writeDataToDir(outputDir string, networks []byte, checksum []byte) error {
+	path, err := filepath.Abs(outputDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert output-dir to absolute path")
+	}
+
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return errors.Wrap(err, "failed to create output dir")
+	}
+	if err := os.WriteFile(filepath.Join(path, "networks"), networks, 0644); err != nil {
+		return errors.Wrap(err, "failed to write networks")
+	}
+	if err := os.WriteFile(filepath.Join(path, "checksum"), checksum, 0644); err != nil {
+		return errors.Wrap(err, "failed to write checksum")
 	}
 
 	return nil
