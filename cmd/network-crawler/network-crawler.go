@@ -73,7 +73,8 @@ func run() error {
 	flag.BoolVar(&flagVerbose, "v", flagVerbose, flagVerboseUsage+" (shorthand)")
 	flag.Parse()
 
-	if flagBucketName == nil || *flagBucketName == "" {
+	// Bucket name is optional on dry runs
+	if (flagBucketName == nil || *flagBucketName == "") && !*flagDryRun {
 		return common.NoBucketNameSpecified()
 	}
 
@@ -266,12 +267,11 @@ func uploadExternalNetworkSources(
 	if outputDir == "" {
 		return nil
 	}
-		log.Printf("Output dir specified. Writing networks and checksum to %v", outputDir)
-		if err := writeDataToDir(outputDir, data, []byte(cksum)); err != nil {
-			return errors.Wrap(err, "failed to write data to directory")
-		}
-
+	log.Printf("Output dir specified. Writing networks and checksum to %v", outputDir)
+	if err := writeDataToDir(outputDir, data, []byte(cksum)); err != nil {
+		return errors.Wrap(err, "failed to write data to directory")
 	}
+
 	return nil
 }
 
@@ -333,6 +333,11 @@ func getCurrentTimestamp() string {
 }
 
 func truncateOutdatedExternalNetworksDefnitions(bucketName string, isDryRun bool) error {
+	if isDryRun && bucketName == "" {
+		log.Print(color.YellowString("Dry run without specified bucket. Skipping bucket-related checks."))
+		return nil
+	}
+
 	prefixes, err := utils.GetAllPrefixesUnderBucketWithPrefix(bucketName, common.MasterBucketPrefix)
 	if err != nil {
 		return errors.Wrapf(err, "failed getting all prefixes under bucket %s", bucketName)
