@@ -1,10 +1,13 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/external-network-pusher/pkg/crawlers/gcp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -83,4 +86,20 @@ func TestValidateExternalNetworks(t *testing.T) {
 	}
 	err = validateExternalNetworks(crawlers, &testNetworks)
 	require.Nil(t, err)
+}
+
+func TestWriteDataToDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	testpath := filepath.Join(tmpDir, "outputDir")
+
+	err := writeDataToDir(testpath, []byte("testnetworks"), []byte("testchecksum"))
+	assert.NoError(t, err)
+
+	netContent, err := os.ReadFile(filepath.Join(testpath, "networks.json"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("testnetworks"), netContent)
+
+	cksumContent, err := os.ReadFile(filepath.Join(testpath, "checksum.sha256"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("testchecksum networks.json"), cksumContent)
 }
