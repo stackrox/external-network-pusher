@@ -4,8 +4,7 @@ updates:
     directory: "/"
     open-pull-requests-limit: 3
     reviewers:
-      - "Maddosaurus"
-      - "tommartensen"
+      - 'stackrox/maple'
     schedule:
       interval: 'weekly'
       day: 'wednesday'
