@@ -15,4 +15,4 @@ updates:
       day: 'wednesday'
     open-pull-requests-limit: 3
     reviewers:
-      - "Maddosaurus"
+      - 'stackrox/maple'
