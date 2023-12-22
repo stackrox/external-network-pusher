@@ -3,7 +3,7 @@ module github.com/stackrox/external-network-pusher
 go 1.19
 
 require (
-	cloud.google.com/go/storage v1.35.1
+	cloud.google.com/go/storage v1.36.0
 	github.com/fatih/color v1.16.0
 	github.com/google/uuid v1.5.0
 	github.com/pkg/errors v0.9.1
