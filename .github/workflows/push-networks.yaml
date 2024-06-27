@@ -29,10 +29,11 @@ jobs:
         run: ${GITHUB_WORKSPACE}/.github/workflows/scripts/download-current-networks.sh
         shell: bash
       
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: current-latest-networks
           path: /tmp/external-networks
+          overwrite: true
 
 
   build:
@@ -67,10 +68,11 @@ jobs:
         run: make build
 
       - name: Upload binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bin
           path: .gobin
+          overwrite: true
 
   run-dry-run: # Dry run will run on PRs by default
     runs-on: ubuntu-latest
@@ -87,7 +89,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bin
-          overwrite: true
 
       - name: Set permissions to file
         run:  chmod +x linux/network-crawler
