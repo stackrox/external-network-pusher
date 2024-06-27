@@ -86,7 +86,8 @@ jobs:
       - name: Download executable
         uses: actions/download-artifact@v4
         with:
-          name: bin
+          pattern: bin-*
+          merge-multiple: true
 
       - name: Set permissions to file
         run:  chmod +x linux/network-crawler
