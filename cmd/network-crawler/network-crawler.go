@@ -145,12 +145,17 @@ func publishExternalNetworks(
 
 		log.Printf("Successfully crawled provider %s", crawler.GetHumanReadableProviderName())
 	}
+	log.Print("Finished crawling all providers.")
 
+	log.Print("=======")
+	log.Print("Validating crawl results...")
 	err = validateExternalNetworks(crawlerImpls, &allExternalNetworks)
 	if err != nil {
 		return errors.Wrap(err, "external network sources validation failed")
 	}
 
+	log.Print("=======")
+	log.Print("Uploading external networks...")
 	// Create and upload the object file
 	err = uploadExternalNetworkSources(
 		&allExternalNetworks,
@@ -164,7 +169,7 @@ func publishExternalNetworks(
 		return errors.Wrap(err, "failed to upload data to bucket")
 	}
 
-	log.Print("Finished crawling all providers.")
+	log.Print("Processing done.")
 	return nil
 }
 
