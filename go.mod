@@ -1,6 +1,8 @@
 module github.com/stackrox/external-network-pusher
 
-go 1.19
+go 1.21
+
+toolchain go1.22.5
 
 require (
 	cloud.google.com/go/storage v1.43.0
