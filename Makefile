@@ -15,7 +15,7 @@ ifeq ($(UNAME_S),Darwin)
     HOST_OS := darwin
 endif
 
-TAG := $(shell ./get-tag)
+TAG := $(git describe --long --tags --abbrev=10 --dirty 2> /dev/null)
 
 GOBIN := $(CURDIR)/.gobin
 PATH := "$(GOBIN):$(PATH)"
