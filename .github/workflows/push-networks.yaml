@@ -129,7 +129,7 @@ jobs:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
       - name: Post to Slack channel team-acs-maple-interruptions
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
           channel-id: "C03SWCX9W0Z"
           payload: >-
