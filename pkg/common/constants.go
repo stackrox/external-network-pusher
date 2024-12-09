@@ -86,13 +86,13 @@ var ProviderToURLs = map[Provider][]string{
 	// https://docs.microsoft.com/en-us/azure/virtual-network/service-tags-overview#service-tags-on-premises
 	Azure: {
 		// Azure Public
-		"https://www.microsoft.com/en-us/download/confirmation.aspx?id=56519",
+		"https://www.microsoft.com/download/details.aspx?id=56519",
 		// Azure US Gov
-		"https://www.microsoft.com/en-us/download/confirmation.aspx?id=57063",
+		"https://www.microsoft.com/download/details.aspx?id=57063",
 		// Azure China
-		"https://www.microsoft.com/en-us/download/confirmation.aspx?id=57062",
+		"https://www.microsoft.com/download/details.aspx?id=57062",
 		// Azure Germany
-		"https://www.microsoft.com/en-us/download/confirmation.aspx?id=57064",
+		"https://www.microsoft.com/download/details.aspx?id=57064",
 	},
 	Amazon: {
 		"https://ip-ranges.amazonaws.com/ip-ranges.json",
