@@ -279,8 +279,11 @@ func (c *azureNetworkCrawler) fetchAll() ([][]byte, error) {
 	jsonURLs := make([]string, 0, len(c.urls))
 	for _, url := range c.urls {
 		jsonURL, err := c.redirectToJSONURL(url)
-		if err != nil || jsonURL == "" {
+		if err != nil {
 			return nil, errors.Wrapf(err, "failed to crawl Azure with URL: %s. Error: %v. JSON URL: %s", url, err, jsonURL)
+		}
+		if jsonURL == "" {
+			return nil, errors.Errorf("failed to crawl Azure with URL: %s, empty JSON URL returned. This could indicate Azure's services are unavailable", url)
 		}
 		log.Printf("Received Azure network JSON URL: %s", jsonURL)
 		jsonURLs = append(jsonURLs, jsonURL)
