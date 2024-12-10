@@ -3,12 +3,11 @@ package azure
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"os/exec"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/external-network-pusher/pkg/common/utils"
+	"log"
+	"os/exec"
 )
 
 // With Microsoft, it is a little different in a sense that: it has four
@@ -278,12 +277,20 @@ func (c *azureNetworkCrawler) fetchAll() ([][]byte, error) {
 	// and the page then renders generated URLs to json files.
 	jsonURLs := make([]string, 0, len(c.urls))
 	for _, url := range c.urls {
-		jsonURL, err := c.redirectToJSONURL(url)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to crawl Azure with URL: %s. Error: %v. JSON URL: %s", url, err, jsonURL)
-		}
-		if jsonURL == "" {
-			return nil, errors.Errorf("failed to crawl Azure with URL: %s, empty JSON URL returned. This could indicate Azure's services are unavailable", url)
+		var jsonURL string
+		retryErr := utils.WithDefaultRetry(func() error {
+			var err error
+			jsonURL, err = c.redirectToJSONURL(url)
+			if err != nil {
+				return errors.Wrapf(err, "failed to crawl Azure with URL: %s. Error: %v. JSON URL: %s", url, err, jsonURL)
+			}
+			if jsonURL == "" {
+				return errors.Errorf("failed to crawl Azure with URL: %s, empty JSON URL returned. This could indicate Azure's services are unavailable", url)
+			}
+			return nil
+		})
+		if retryErr != nil {
+			return nil, retryErr
 		}
 		log.Printf("Received Azure network JSON URL: %s", jsonURL)
 		jsonURLs = append(jsonURLs, jsonURL)
@@ -292,9 +299,9 @@ func (c *azureNetworkCrawler) fetchAll() ([][]byte, error) {
 	contents := make([][]byte, 0, len(jsonURLs))
 	for _, jsonURL := range jsonURLs {
 		log.Printf("Current URL is: %s", jsonURL)
-		body, err := utils.HTTPGet(jsonURL)
+		body, err := utils.HTTPGetWithRetry("Azure", jsonURL)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to fetch networks from Azure with URL: %s. Error: %v", jsonURL, err)
+			return nil, err
 		}
 		contents = append(contents, body)
 	}
@@ -318,7 +325,7 @@ func (c *azureNetworkCrawler) redirectToJSONURL(rawURL string) (string, error) {
 		rawURL)
 	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
 	if err != nil {
-		errors.Wrapf(err, "failed to redirect to JSON URL while trying to crawl Azure with URL: %s", rawURL)
+		err = errors.Wrapf(err, "failed to redirect to JSON URL while trying to crawl Azure with URL: %s", rawURL)
 		return "", err
 	}
 	return string(out), nil

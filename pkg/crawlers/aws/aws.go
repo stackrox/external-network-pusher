@@ -67,11 +67,7 @@ func (c *awsNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkR
 }
 
 func (c *awsNetworkCrawler) fetch() ([]byte, error) {
-	body, err := utils.HTTPGet(c.url)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch networks from Google")
-	}
-	return body, nil
+	return utils.HTTPGetWithRetry("Amazon", c.url)
 }
 
 func (c *awsNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkRanges, error) {
