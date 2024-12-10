@@ -58,11 +58,7 @@ func (c *gcpNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkR
 }
 
 func (c *gcpNetworkCrawler) fetch() ([]byte, error) {
-	body, err := utils.HTTPGet(c.url)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch networks from Google")
-	}
-	return body, nil
+	return utils.HTTPGetWithRetry("Google", c.url)
 }
 
 func (c *gcpNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkRanges, error) {

@@ -60,11 +60,7 @@ func (c *cloudflareNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderN
 }
 
 func (c *cloudflareNetworkCrawler) fetch() ([]byte, error) {
-	body, err := utils.HTTPGet(c.url)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch networks from Cloudflare with URL: %s", c.url)
-	}
-	return body, nil
+	return utils.HTTPGetWithRetry("Cloudflare", c.url)
 }
 
 func (c *cloudflareNetworkCrawler) parseNetworks(networks []byte) (*common.ProviderNetworkRanges, error) {

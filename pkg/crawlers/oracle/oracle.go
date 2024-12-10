@@ -61,11 +61,7 @@ func (c *ociNetworkCrawler) CrawlPublicNetworkRanges() (*common.ProviderNetworkR
 }
 
 func (c *ociNetworkCrawler) fetch() ([]byte, error) {
-	body, err := utils.HTTPGet(c.url)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch networks from Oracle")
-	}
-	return body, nil
+	return utils.HTTPGetWithRetry("Oracle", c.url)
 }
 
 func (c *ociNetworkCrawler) parseNetworks(data []byte) (*common.ProviderNetworkRanges, error) {
