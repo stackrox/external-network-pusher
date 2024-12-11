@@ -292,7 +292,7 @@ func (c *azureNetworkCrawler) fetchAll() ([][]byte, error) {
 		if retryErr != nil {
 			return nil, retryErr
 		}
-		log.Printf("Received Azure network JSON URL: %s", jsonURL)
+		log.Printf("Success obtaining Azure network JSON URL %q from %q", jsonURL, url)
 		jsonURLs = append(jsonURLs, jsonURL)
 	}
 
@@ -325,7 +325,7 @@ func (c *azureNetworkCrawler) redirectToJSONURL(rawURL string) (string, error) {
 		rawURL)
 	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
 	if err != nil {
-		err = errors.Wrapf(err, "failed to redirect to JSON URL while trying to crawl Azure with URL: %s", rawURL)
+		err = errors.Wrapf(err, "failed to redirect to JSON URL %q while trying to crawl Azure with URL", rawURL)
 		return "", err
 	}
 	return string(out), nil
