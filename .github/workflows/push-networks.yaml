@@ -128,10 +128,10 @@ jobs:
     env:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
-      - name: Post to Slack channel team-acs-maple-interruptions
+      - name: Post to Slack channel team-acs-sensor-ecosystem-interruptions
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          channel-id: "C03SWCX9W0Z"
+          channel-id: "C08D1NHBF8B"
           payload: >-
             { "blocks": [
 
