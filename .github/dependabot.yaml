@@ -3,8 +3,6 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     open-pull-requests-limit: 3
-    reviewers:
-      - 'stackrox/sensor-ecosystem'
     schedule:
       interval: 'weekly'
       day: 'wednesday'
@@ -14,5 +12,3 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-      - 'stackrox/sensor-ecosystem'
