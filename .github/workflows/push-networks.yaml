@@ -129,7 +129,7 @@ jobs:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
       - name: Post to Slack channel team-acs-sensor-ecosystem-interruptions
-        uses: slackapi/slack-github-action@v2.1.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
           channel-id: "C08D1NHBF8B"
           payload: >-
