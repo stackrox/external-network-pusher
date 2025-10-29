@@ -29,7 +29,7 @@ jobs:
         run: ${GITHUB_WORKSPACE}/.github/workflows/scripts/download-current-networks.sh
         shell: bash
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: current-latest-networks
           path: /tmp/external-networks
@@ -68,7 +68,7 @@ jobs:
         run: make build
 
       - name: Upload binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bin
           path: .gobin
