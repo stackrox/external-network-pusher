@@ -23,7 +23,7 @@ jobs:
     if:  github.event_name == 'schedule' || (github.event.inputs.dry-run == 'false' && github.event_name == 'workflow_dispatch') # Can only be triggered by scheduled run or manual action with dry-run set to false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Download and test latest networks 
         run: ${GITHUB_WORKSPACE}/.github/workflows/scripts/download-current-networks.sh
@@ -40,7 +40,7 @@ jobs:
     name: Build external-network-pusher
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Read Go version from go.mod
         run: echo "GO_VERSION=$(grep -E "^go\s+[0-9.]+$" go.mod | cut -d " " -f 2)" >> $GITHUB_ENV
