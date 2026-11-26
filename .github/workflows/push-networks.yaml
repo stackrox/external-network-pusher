@@ -87,7 +87,7 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v3'
 
       - name: Download executable
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: bin
 
@@ -110,7 +110,7 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v3'
 
       - name: Download executable
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: bin
 
