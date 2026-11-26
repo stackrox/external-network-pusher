@@ -125,15 +125,14 @@ jobs:
     if: failure() && (github.event_name == 'schedule' || (github.event.inputs.dry-run == 'false' && github.event_name == 'workflow_dispatch')) # Only trigger on failures of schedule & manual non-dry runs
     needs: run-and-upload
     runs-on: ubuntu-latest
-    env:
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
-      - name: Post to Slack channel team-acs-sensor-ecosystem-interruptions
+      - name: Post to Slack channel acs-sig-secured-cluster
         uses: slackapi/slack-github-action@v2.1.1
         with:
-          channel-id: "C08D1NHBF8B"
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: >-
-            { "blocks": [
+            { "channel": "C0BJ6CMUDTJ", "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":red-warning: Daily update of external networks for defintions.stackrox.io failed! :red-warning:\nRefer to the Workflow logs for more information."}},
